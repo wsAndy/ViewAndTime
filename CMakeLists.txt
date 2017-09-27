@@ -42,8 +42,8 @@ target_link_libraries(SLIC
 )
 
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build/)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/)
 
 
-add_executable(main src/main.cpp)
-target_link_libraries(main SLIC)
+add_executable(run src/main.cpp)
+target_link_libraries(run SLIC)
