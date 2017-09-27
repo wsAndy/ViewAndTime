@@ -4,6 +4,9 @@
 ##### How to use(in ubuntu)
 
 in ViewAndTime path,
-`$ cd build`
-`$ cmake ..`
-`$ make -j4`
+
+    `$ cd build`
+
+    `$ cmake ..`
+
+    `$ make -j4`
