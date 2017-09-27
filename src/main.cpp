@@ -14,17 +14,23 @@
 using namespace std;
 using namespace  cv;
 
-
+// for matching
 void matchTwoImageSURF(Mat &img1_col, Mat &img2_col, vector< cv::Point2f> & ,vector< cv::Point2f> & );
 void matchTwoImageORB(Mat &img1_col, Mat &img2_col, vector< cv::Point2f> & ,vector< cv::Point2f> & );
 int findmaxclu(vec2di& vec);
+void addTwoImageToOne(Mat& ,Mat&, Mat&);
+void displayMergeImage(Mat & , vector<  cv::Point2f > & , Mat &, vector<  cv::Point2f > &);
 
+
+// for superpixels
+// show superpixels cluster
 Mat getColorCluster(vec2di & cluster);
 Mat getSingleCluster(vec2di & cluster);
-void testSLIC(Mat& img1_col);
+vec2di getSuperPixels(Mat& img1_col);
+// for  cv::Point3f, I define [x,y,counter]
+void displayCenterWithCluster(vector< cv::Point3f > &center, vec2di & cluster);
+vector<cv::Point3f> getCenterFromCluster(vec2di & cluster);
 
-void addTwoImageToOne(Mat& ,Mat&, Mat&);
-void display(Mat & , vector<  cv::Point2f > & , Mat &, vector<  cv::Point2f > &);
 
 
 int main()
@@ -33,22 +39,55 @@ int main()
     Mat img1_col = imread( path + "cam0/color-cam0-f000.jpg");
     Mat img2_col = imread( path + "cam2/color-cam2-f000.jpg");
 
-//    testSLIC(img1_col);
 
     vector<  cv::Point2f > mat_point1, mat_point2;
 
+    // use ORB and SURF features to match pixels
     matchTwoImageSURF(img1_col,img2_col, mat_point1, mat_point2);
     matchTwoImageORB(img1_col,img2_col, mat_point1, mat_point2);
 
+    /*
+     *  show matching pixels in two image
     if(mat_point1.size() == mat_point2.size())
     {
 
-        display(img1_col, mat_point1,img2_col, mat_point2);
+        displayMergeImage(img1_col, mat_point1,img2_col, mat_point2);
 
     }else{
         cout << "point1 size != point2 size" << endl;
     }
+    */
 
+    vec2di cluster = getSuperPixels(img1_col);
+
+    vector<cv::Point3f> center = getCenterFromCluster(cluster);
+
+// show center in new cluster
+//    displayCenterWithCluster(center, cluster);
+
+    vector<bool> vec_bool_cluster;
+    int max_clu = findmaxclu(cluster);
+
+    for(int i = 0; i < max_clu; ++i)
+    {
+        vec_bool_cluster.push_back(false);
+    }
+    for(int i = 0; i < mat_point1.size(); ++i)
+    {
+           vec_bool_cluster[cluster[int(mat_point1[i].x)][int(mat_point1[i].y)]] = true;
+    }
+
+    // start to merge the neighbor superpixels
+
+    for(int i = 0; i < vec_bool_cluster.size(); ++i)
+    {
+        if(vec_bool_cluster[i])
+        {
+            // start to merge the neighbor superpixels
+
+
+        }
+    }
 
 
 
@@ -57,7 +96,57 @@ int main()
     return 0;
 }
 
-void display(Mat & img1_col, vector<  cv::Point2f > &mat_point1, Mat & img2_col, vector<  cv::Point2f > &mat_point2 )
+vector<cv::Point3f> getCenterFromCluster(vec2di & cluster)
+{
+    // merge cluster
+    vector< cv::Point3f > center;
+    // init center
+    int max_clus = findmaxclu(cluster);
+
+    for(int i=0; i < max_clus; ++i)
+    {
+        center.push_back(Point3f(0,0,0));
+    }
+
+
+    for(int i = 0; i < cluster.size(); ++i)
+    {
+        for(int j = 0; j < cluster[0].size(); ++j)
+        {
+            center[cluster[i][j]].x += i;
+            center[cluster[i][j]].y += j;
+            center[cluster[i][j]].z += 1; // as counter
+
+        }
+    }
+    for(int i = 0; i < center.size(); ++i)
+    {
+        if(abs(center[i].z)>1e-2 )
+        {
+            center[i].x = center[i].x/center[i].z;
+            center[i].y = center[i].y/center[i].z;
+        }
+    }
+
+    return center; // x,y,counter
+
+}
+
+void displayCenterWithCluster(vector< cv::Point3f > &center, vec2di & cluster)
+{
+    Mat sin = getColorCluster(cluster);
+    for(int i = 0 ; i < center.size(); ++i)
+    {
+        if( abs(center[i].z)>1e-2 )
+        {
+            circle(sin,Point2f(center[i].x, center[i].y), 3,Scalar(255,0,255),2);
+        }
+    }
+    imshow("sin",sin);
+    waitKey(0);
+}
+
+void displayMergeImage(Mat & img1_col, vector<  cv::Point2f > &mat_point1, Mat & img2_col, vector<  cv::Point2f > &mat_point2 )
 {
     Mat match_img;
 
@@ -97,7 +186,7 @@ void addTwoImageToOne(Mat &img1_col,Mat &img2_col,Mat &match_img)
 
 }
 
-void testSLIC(Mat& img1_col)
+vec2di getSuperPixels(Mat& img1_col)
 {
     Mat *lab_img1,lab1;
 
@@ -118,18 +207,19 @@ void testSLIC(Mat& img1_col)
     sl.create_connectivity(lab_img1);
 
     vec2di new_cluster = sl.get_new_cluster();
-    vec2di cluster = sl.get_cluster();
+//    vec2di cluster = sl.get_cluster();
 
+    return new_cluster;
 
-    Mat sup = getSingleCluster(cluster);
-    Mat new_sup = getColorCluster(new_cluster);
 
     //vec2dd center = sl.get_center();
     //vec2dd distance = sl.get_distance();
 
-    imshow("new_cluster",new_sup);
-    imshow("cluster",sup);
-    waitKey(0);
+//    Mat sup = getSingleCluster(cluster);
+//    Mat new_sup = getColorCluster(new_cluster);
+//    imshow("new_cluster",new_sup);
+//    imshow("cluster",sup);
+//    waitKey(0);
 
 }
 

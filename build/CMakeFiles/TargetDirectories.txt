@@ -1,4 +1,4 @@
 /home/arvr/Desktop/ViewAndTime/build/CMakeFiles/rebuild_cache.dir
+/home/arvr/Desktop/ViewAndTime/build/CMakeFiles/run.dir
 /home/arvr/Desktop/ViewAndTime/build/CMakeFiles/edit_cache.dir
-/home/arvr/Desktop/ViewAndTime/build/CMakeFiles/main.dir
 /home/arvr/Desktop/ViewAndTime/build/CMakeFiles/SLIC.dir

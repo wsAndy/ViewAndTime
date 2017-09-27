@@ -60,39 +60,39 @@ CMAKE_SOURCE_DIR = /home/arvr/Desktop/ViewAndTime
 CMAKE_BINARY_DIR = /home/arvr/Desktop/ViewAndTime/build
 
 #=============================================================================
-# Target rules for target CMakeFiles/main.dir
+# Target rules for target CMakeFiles/run.dir
 
 # All Build rule for target.
-CMakeFiles/main.dir/all: CMakeFiles/SLIC.dir/all
-	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/depend
-	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/arvr/Desktop/ViewAndTime/build/CMakeFiles --progress-num=3,4 "Built target main"
-.PHONY : CMakeFiles/main.dir/all
+CMakeFiles/run.dir/all: CMakeFiles/SLIC.dir/all
+	$(MAKE) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/depend
+	$(MAKE) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/arvr/Desktop/ViewAndTime/build/CMakeFiles --progress-num=3,4 "Built target run"
+.PHONY : CMakeFiles/run.dir/all
 
 # Include target in all.
-all: CMakeFiles/main.dir/all
+all: CMakeFiles/run.dir/all
 
 .PHONY : all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/main.dir/rule: cmake_check_build_system
+CMakeFiles/run.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/arvr/Desktop/ViewAndTime/build/CMakeFiles 4
-	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/main.dir/all
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/run.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/arvr/Desktop/ViewAndTime/build/CMakeFiles 0
-.PHONY : CMakeFiles/main.dir/rule
+.PHONY : CMakeFiles/run.dir/rule
 
 # Convenience name for target.
-main: CMakeFiles/main.dir/rule
+run: CMakeFiles/run.dir/rule
 
-.PHONY : main
-
-# clean rule for target.
-CMakeFiles/main.dir/clean:
-	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/clean
-.PHONY : CMakeFiles/main.dir/clean
+.PHONY : run
 
 # clean rule for target.
-clean: CMakeFiles/main.dir/clean
+CMakeFiles/run.dir/clean:
+	$(MAKE) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/clean
+.PHONY : CMakeFiles/run.dir/clean
+
+# clean rule for target.
+clean: CMakeFiles/run.dir/clean
 
 .PHONY : clean
 
