@@ -93,10 +93,10 @@ int main()
         }
     }
 
-    for(int i = 0; i < id_without.size(); ++i)
-    {
-        cout << id_without[i] << endl;
-    }
+//    for(int i = 0; i < id_without.size(); ++i)
+//    {
+//        cout << id_without[i] << endl;
+//    }
 
 
     vec2dd dist_mat = createDistMat(center);
@@ -105,8 +105,6 @@ int main()
 
     // start to merge the neighbor superpixels
     std::map<int,int> id_link;
-
-    cout << "set - > " << id_without.size() << endl;
 
     for(int i = 0; i < id_without.size(); ++i)
     {
@@ -118,32 +116,29 @@ int main()
 
 //        cout << id_without[i] << endl;
 
-        int target_id = findNearestId(dist_mat,id_wi-thout[i] );
+        int target_id = findNearestId(dist_mat,id_without[i] );
 
         id_link[ id_without[i] ] = target_id;
 
     }
 
-    cout << id_link.size() << endl;
-
-//    for(map<int,int>::iterator it = id_link.begin(); it!= id_link.end(); ++it)
-//    {
-//        cout << it->first << " -> " << it->second << endl;
-//    }
+//    cout << id_link.size() << endl;
 
     // then fix change the cluster again
     for(int i = 0 ; i < cluster.size(); ++i)
     {
         for(int j = 0; j < cluster[i].size(); ++j)
         {
-            if(cluster[i][j])
+            if(std::find(id_without.begin(), id_without.end(),cluster[i][j])!=id_without.end())
             {
-
+                cluster[i][j] = id_link[ cluster[i][j] ];
             }
-
         }
     }
 
+    // update center
+    vector<cv::Point3f> new_center = getCenterFromCluster(cluster);
+    displayCenterWithCluster(new_center,cluster);
 
 
 
@@ -208,42 +203,6 @@ vec2dd createDistMat(vector<cv::Point3f> & center)
 
     return dist_mat;
 }
-
-
-// have some problem
-
-//vector< vector<int> > convertCenterToArray(vector< cv::Point3f> & center)
-//{
-//    vector< vector<int> > array;
-
-//    for(int i = 0; i < center.size(); ++i)
-//    {
-//        vector<int> array_column;
-//        for(int j = i; ; ++j )
-//        {
-//            array_column.push_back(j);
-
-//            if( j == center.size()-1)
-//            {
-//                cout << j << " -> " << "center-1" << endl;
-//                array.push_back(array_column);
-//                i = j;
-//                break; // reach the last row in one column
-//            }
-//            if(center[j].y > center[j+1].y )
-//            {
-//                cout << j << " -> " << center[j].y << " > " << center[j+1].y << endl;
-//                array.push_back(array_column);
-//                i = j;
-//                break; // reach the last row in one column
-//            }
-//        }
-//        array_column.clear();
-
-//    }
-//    return array;
-
-//}
 
 
 double distance(cv::Point3f& point1 , cv::Point3f& point2)
