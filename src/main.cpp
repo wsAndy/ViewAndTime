@@ -8,6 +8,7 @@
 #include "opencv2/nonfree/features2d.hpp"
 #include "string"
 #include "set"
+#include "map"
 #include "SLIC/slic.h"
 
 
@@ -33,7 +34,8 @@ vector<cv::Point3f> getCenterFromCluster(vec2di & cluster);
 //vector< vector<int> > convertCenterToArray( vector< cv::Point3f> &center);
 double distance(cv::Point3f& , cv::Point3f& );
 vec2dd createDistMat(vector<cv::Point3f> & center);
-void updateDistMat(vec2dd& , set<int>&);
+void updateDistMat(vec2dd& , vector<int>& );
+int findNearestId(vec2dd& ,int );
 
 
 
@@ -68,37 +70,65 @@ int main()
 
     cout << "center size = " << center.size() << endl;
 
-    vec2dd dist_mat = createDistMat(center);
-
 
     vector<bool> vec_bool_cluster;
-    set<int> cluster_without_feature;
     int max_clu = findmaxclu(cluster);
 
     for(int i = 0; i < max_clu; ++i)
     {
         vec_bool_cluster.push_back(false); // vec_bool_cluster -> ID
-        cluster_without_feature.insert(i);
     }
     for(int i = 0; i < mat_point1.size(); ++i)
     {
         int ID = cluster[int(mat_point1[i].x)][int(mat_point1[i].y)];
         vec_bool_cluster[ID] = true;
-        cluster_without_feature.erase(ID);
     }
 
-    updateDistMat(dist_mat,cluster_without_feature);
+    vector<int> id_without;
+    for(int i = 0; i < vec_bool_cluster.size(); ++i)
+    {
+        if(!vec_bool_cluster[i])
+        {
+            id_without.push_back(i);
+        }
+    }
 
+    for(int i = 0; i < id_without.size(); ++i)
+    {
+        cout << id_without[i] << endl;
+    }
+
+
+    vec2dd dist_mat = createDistMat(center);
+
+    updateDistMat(dist_mat,id_without);
 
     // start to merge the neighbor superpixels
+    std::map<int,int> id_link;
 
-    for(set<int>::iterator it = 0; it !=cluster_without_feature.end(); ++it)
+    cout << "set - > " << id_without.size() << endl;
+
+    for(int i = 0; i < id_without.size(); ++i)
     {
-            // start to merge the neighbor superpixels
-            // find the nearest point in set cluster
+        // start to merge the neighbor superpixels
+        // find the nearest point in set cluster
 
-            // i-th surperpixels ID donnot have feature
-         // this *it means the superpixels' ID ,also the column number in dist_mat
+        // i-th surperpixels ID donnot have feature
+        // this *it means the superpixels' ID ,also the column number in dist_mat
+
+//        cout << id_without[i] << endl;
+
+        int target_id = findNearestId(dist_mat,id_without[i] );
+
+        id_link[ id_without[i] ] = target_id;
+
+    }
+
+    cout << id_link.size() << endl;
+
+    for(map<int,int>::iterator it = id_link.begin(); it!= id_link.end(); ++it)
+    {
+        cout << it->first << " -> " << it->second << endl;
     }
 
 
@@ -108,19 +138,36 @@ int main()
     return 0;
 }
 
-void updateDistMat(vec2dd & dist_mat, set<int>& id_set)
+int findNearestId(vec2dd& dist, int id)
 {
-    vector<int> id;
-    for(set<int>::iterator it = id_set.begin(); it!=id_set.end(); ++it)
-    {
-        id.push_back(*it);
+    int min = 10000;
+
+    for(int i = 0; i < dist[id].size(); ++i )
+    {// column
+        if(dist[id][i] > 0 && min > dist[id][i])
+        {
+            min = dist[id][i];
+        }
     }
+
+    return min;
+
+
+}
+
+void updateDistMat(vec2dd & dist_mat, vector<int>& id)
+{
 
     for(int i = 0 ; i < id.size()-1; ++i)
     {
         for(int j = i+1; j < id.size(); ++j)
         {
-            dist_mat[ id[i] ][ id[j] ] = -1;
+            if(id[i] > id[j]) // very important! since the structure of dist_mat like a triangle
+            {
+                dist_mat[ id[i] ][ id[j] ] = -1;
+            }else{
+                dist_mat[ id[j] ][ id[i] ] = -1;
+            }
         }
     }
 
@@ -142,8 +189,11 @@ vec2dd createDistMat(vector<cv::Point3f> & center)
             }
         }
         dist_mat.push_back(dist_ab);
+        dist_ab.clear();
 
     }
+
+
     return dist_mat;
 }
 
