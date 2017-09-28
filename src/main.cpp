@@ -30,6 +30,7 @@ vec2di getSuperPixels(Mat& img1_col);
 // for  cv::Point3f, I define [x,y,counter]
 void displayCenterWithCluster(vector< cv::Point3f > &center, vec2di & cluster);
 vector<cv::Point3f> getCenterFromCluster(vec2di & cluster);
+vector< vector<int> > convertCenterToArray( vector< cv::Point3f> &center);
 
 
 
@@ -61,6 +62,20 @@ int main()
     vec2di cluster = getSuperPixels(img1_col);
 
     vector<cv::Point3f> center = getCenterFromCluster(cluster);
+
+    cout << "center size = " << center.size() <<endl;
+
+    vector< vector<int> > array_center =  convertCenterToArray(center);
+
+    for(int i = 0; i < array_center.size(); ++i)
+    {
+        for(int j = 0 ; j < array_center[i].size(); ++j)
+        {
+            cout << array_center[i][j] << "   ";
+        }
+        cout << endl;
+    }
+
 
 // show center in new cluster
 //    displayCenterWithCluster(center, cluster);
@@ -94,6 +109,40 @@ int main()
 
 
     return 0;
+}
+
+
+// have some problem
+
+vector< vector<int> > convertCenterToArray(vector< cv::Point3f> & center)
+{
+    vector< vector<int> > array;
+
+    for(int i = 0; i < center.size()-1; ++i)
+    {
+        vector<int> array_column;
+        for(int j = i; ; ++j )
+        {
+            array_column.push_back(j);
+
+            if( j == center.size()-1)
+            {
+                array.push_back(array_column);
+                i = j;
+                break; // reach the last row in one column
+            }
+            if(center[j].y > center[j+1].y )
+            {
+                array.push_back(array_column);
+                i = j;
+                break; // reach the last row in one column
+            }
+        }
+        array_column.clear();
+
+    }
+    return array;
+
 }
 
 vector<cv::Point3f> getCenterFromCluster(vec2di & cluster)
