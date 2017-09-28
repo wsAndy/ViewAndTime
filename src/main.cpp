@@ -30,7 +30,10 @@ vec2di getSuperPixels(Mat& img1_col);
 // for  cv::Point3f, I define [x,y,counter]
 void displayCenterWithCluster(vector< cv::Point3f > &center, vec2di & cluster);
 vector<cv::Point3f> getCenterFromCluster(vec2di & cluster);
-vector< vector<int> > convertCenterToArray( vector< cv::Point3f> &center);
+//vector< vector<int> > convertCenterToArray( vector< cv::Point3f> &center);
+double distance(cv::Point3f& , cv::Point3f& );
+vec2dd createDistMat(vector<cv::Point3f> & center);
+void updateDistMat(vec2dd& , set<int>&);
 
 
 
@@ -59,49 +62,43 @@ int main()
     }
     */
 
-    vec2di cluster = getSuperPixels(img1_col);
+    vec2di cluster = getSuperPixels(img1_col); // not follow sequences
 
     vector<cv::Point3f> center = getCenterFromCluster(cluster);
 
-    cout << "center size = " << center.size() <<endl;
+    cout << "center size = " << center.size() << endl;
 
-    vector< vector<int> > array_center =  convertCenterToArray(center);
+    vec2dd dist_mat = createDistMat(center);
 
-    for(int i = 0; i < array_center.size(); ++i)
-    {
-        for(int j = 0 ; j < array_center[i].size(); ++j)
-        {
-            cout << array_center[i][j] << "   ";
-        }
-        cout << endl;
-    }
-
-
-// show center in new cluster
-//    displayCenterWithCluster(center, cluster);
 
     vector<bool> vec_bool_cluster;
+    set<int> cluster_without_feature;
     int max_clu = findmaxclu(cluster);
 
     for(int i = 0; i < max_clu; ++i)
     {
-        vec_bool_cluster.push_back(false);
+        vec_bool_cluster.push_back(false); // vec_bool_cluster -> ID
+        cluster_without_feature.insert(i);
     }
     for(int i = 0; i < mat_point1.size(); ++i)
     {
-           vec_bool_cluster[cluster[int(mat_point1[i].x)][int(mat_point1[i].y)]] = true;
+        int ID = cluster[int(mat_point1[i].x)][int(mat_point1[i].y)];
+        vec_bool_cluster[ID] = true;
+        cluster_without_feature.erase(ID);
     }
+
+    updateDistMat(dist_mat,cluster_without_feature);
+
 
     // start to merge the neighbor superpixels
 
-    for(int i = 0; i < vec_bool_cluster.size(); ++i)
+    for(set<int>::iterator it = 0; it !=cluster_without_feature.end(); ++it)
     {
-        if(vec_bool_cluster[i])
-        {
             // start to merge the neighbor superpixels
+            // find the nearest point in set cluster
 
-
-        }
+            // i-th surperpixels ID donnot have feature
+         // this *it means the superpixels' ID ,also the column number in dist_mat
     }
 
 
@@ -111,38 +108,85 @@ int main()
     return 0;
 }
 
+void updateDistMat(vec2dd & dist_mat, set<int>& id_set)
+{
+    vector<int> id;
+    for(set<int>::iterator it = id_set.begin(); it!=id_set.end(); ++it)
+    {
+        id.push_back(*it);
+    }
+
+    for(int i = 0 ; i < id.size()-1; ++i)
+    {
+        for(int j = i+1; j < id.size(); ++j)
+        {
+            dist_mat[ id[i] ][ id[j] ] = -1;
+        }
+    }
+
+}
+
+vec2dd createDistMat(vector<cv::Point3f> & center)
+{
+    vec2dd dist_mat;
+    for(int i = 0; i < center.size();++i)
+    {
+        vector<double> dist_ab;
+        for(int j = 0; j <=i ; ++j)
+        {
+            if(j == i)
+            {
+                dist_ab.push_back(0);
+            }else{
+                dist_ab.push_back(distance(center[i],center[j]));
+            }
+        }
+        dist_mat.push_back(dist_ab);
+
+    }
+    return dist_mat;
+}
+
 
 // have some problem
 
-vector< vector<int> > convertCenterToArray(vector< cv::Point3f> & center)
+//vector< vector<int> > convertCenterToArray(vector< cv::Point3f> & center)
+//{
+//    vector< vector<int> > array;
+
+//    for(int i = 0; i < center.size(); ++i)
+//    {
+//        vector<int> array_column;
+//        for(int j = i; ; ++j )
+//        {
+//            array_column.push_back(j);
+
+//            if( j == center.size()-1)
+//            {
+//                cout << j << " -> " << "center-1" << endl;
+//                array.push_back(array_column);
+//                i = j;
+//                break; // reach the last row in one column
+//            }
+//            if(center[j].y > center[j+1].y )
+//            {
+//                cout << j << " -> " << center[j].y << " > " << center[j+1].y << endl;
+//                array.push_back(array_column);
+//                i = j;
+//                break; // reach the last row in one column
+//            }
+//        }
+//        array_column.clear();
+
+//    }
+//    return array;
+
+//}
+
+
+double distance(cv::Point3f& point1 , cv::Point3f& point2)
 {
-    vector< vector<int> > array;
-
-    for(int i = 0; i < center.size()-1; ++i)
-    {
-        vector<int> array_column;
-        for(int j = i; ; ++j )
-        {
-            array_column.push_back(j);
-
-            if( j == center.size()-1)
-            {
-                array.push_back(array_column);
-                i = j;
-                break; // reach the last row in one column
-            }
-            if(center[j].y > center[j+1].y )
-            {
-                array.push_back(array_column);
-                i = j;
-                break; // reach the last row in one column
-            }
-        }
-        array_column.clear();
-
-    }
-    return array;
-
+    return sqrt(  pow(point1.x - point2.x, 2) + pow(point1.y - point2.y, 2)  );
 }
 
 vector<cv::Point3f> getCenterFromCluster(vec2di & cluster)
@@ -165,9 +209,9 @@ vector<cv::Point3f> getCenterFromCluster(vec2di & cluster)
             center[cluster[i][j]].x += i;
             center[cluster[i][j]].y += j;
             center[cluster[i][j]].z += 1; // as counter
-
         }
-    }
+    }// the sequence of center is not like the really Matrix
+
     for(int i = 0; i < center.size(); ++i)
     {
         if(abs(center[i].z)>1e-2 )
@@ -189,6 +233,10 @@ void displayCenterWithCluster(vector< cv::Point3f > &center, vec2di & cluster)
         if( abs(center[i].z)>1e-2 )
         {
             circle(sin,Point2f(center[i].x, center[i].y), 3,Scalar(255,0,255),2);
+            stringstream ss;
+            ss << i;
+            string str = ss.str();
+            putText(sin,str,Point2f(center[i].x, center[i].y),FONT_HERSHEY_COMPLEX,1,cv::Scalar(0, 255, 255),1,8,0);
         }
     }
     imshow("sin",sin);
@@ -305,9 +353,6 @@ Mat getSingleCluster(vec2di& cluster)
 
 Mat getColorCluster(vec2di & cluster)
 {
-
-    set<int> last_clus;
-    last_clus.insert(-1);
 
     int max_clu = findmaxclu(cluster);
 
