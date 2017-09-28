@@ -118,7 +118,7 @@ int main()
 
 //        cout << id_without[i] << endl;
 
-        int target_id = findNearestId(dist_mat,id_without[i] );
+        int target_id = findNearestId(dist_mat,id_wi-thout[i] );
 
         id_link[ id_without[i] ] = target_id;
 
@@ -126,11 +126,23 @@ int main()
 
     cout << id_link.size() << endl;
 
-    for(map<int,int>::iterator it = id_link.begin(); it!= id_link.end(); ++it)
-    {
-        cout << it->first << " -> " << it->second << endl;
-    }
+//    for(map<int,int>::iterator it = id_link.begin(); it!= id_link.end(); ++it)
+//    {
+//        cout << it->first << " -> " << it->second << endl;
+//    }
 
+    // then fix change the cluster again
+    for(int i = 0 ; i < cluster.size(); ++i)
+    {
+        for(int j = 0; j < cluster[i].size(); ++j)
+        {
+            if(cluster[i][j])
+            {
+
+            }
+
+        }
+    }
 
 
 
