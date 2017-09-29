@@ -13,18 +13,17 @@ in ViewAndTime path,
 
 
 ### Example
+1. for those original surpixels, like
 
-	for those original surpixels, like
-
-	![](./img/original.jpg)
+![](./img/original.jpg)
     
-	for those updated surperpixel, like
+2. for those updated surperpixel, like
 
-	![](./img/updat_cluster.jpg)
+![](./img/updat_cluster.jpg)
 
-	merge with original image, like
+3. merge with original image, like
 
-	![without_feature_region_is_bright](./img/without_feature.jpg)
+![without_feature_region_is_bright](./img/without_feature.jpg)
 
-	![](./img/without_region.jpg)
+![](./img/without_region.jpg)
 
