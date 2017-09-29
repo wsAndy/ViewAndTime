@@ -35,7 +35,8 @@ vector<cv::Point3f> getCenterFromCluster(vec2di & cluster);
 double distance(cv::Point3f& , cv::Point3f& );
 vec2dd createDistMat(vector<cv::Point3f> & center);
 void updateDistMat(vec2dd& , vector<int>& );
-int findNearestId(vec2dd& ,int );
+int findNearestId(vec2dd& ,int& );
+void drawSpecID(vec2di& , int&, int&);
 
 
 
@@ -54,15 +55,16 @@ int main()
 
     /*
      *  show matching pixels in two image
-    if(mat_point1.size() == mat_point2.size())
-    {
+     * */
+//    if(mat_point1.size() == mat_point2.size())
+//    {
 
-        displayMergeImage(img1_col, mat_point1,img2_col, mat_point2);
+//        displayMergeImage(img1_col, mat_point1,img2_col, mat_point2);
 
-    }else{
-        cout << "point1 size != point2 size" << endl;
-    }
-    */
+//    }else{
+//        cout << "point1 size != point2 size" << endl;
+//    }
+
 
     vec2di cluster = getSuperPixels(img1_col); // not follow sequences
 
@@ -93,10 +95,29 @@ int main()
         }
     }
 
-//    for(int i = 0; i < id_without.size(); ++i)
-//    {
-//        cout << id_without[i] << endl;
-//    }
+
+    //test  draw id_without region
+    Mat without_region = Mat::zeros(cluster[0].size(),cluster.size(),CV_8UC3);
+    for(int i = 0; i < cluster.size(); ++i)
+    {
+        for(int j = 0; j < cluster[i].size(); ++j)
+        {
+            if( std::find(id_without.begin(), id_without.end(), cluster[i][j])!= id_without.end())
+            {
+                without_region.at<Vec3b>(j,i)[0] = 255;
+                without_region.at<Vec3b>(j,i)[1] = 255;
+                without_region.at<Vec3b>(j,i)[2] = 255;
+            }
+        }
+    }
+
+    Mat cl = getColorCluster(cluster);
+    imwrite("/home/arvr/Desktop/original.jpg",cl);
+    Mat out;
+    addWeighted(without_region,0.7,cl,0.3,0,out);
+    imshow("out",out);
+    imwrite("/home/arvr/Desktop/without_region.jpg",out);
+    waitKey(0);
 
 
     vec2dd dist_mat = createDistMat(center);
@@ -108,21 +129,23 @@ int main()
 
     for(int i = 0; i < id_without.size(); ++i)
     {
-        // start to merge the neighbor superpixels
-        // find the nearest point in set cluster
 
         // i-th surperpixels ID donnot have feature
-        // this *it means the superpixels' ID ,also the column number in dist_mat
-
-//        cout << id_without[i] << endl;
+        // id_without[i] means the superpixels' ID ,also the column number in dist_mat
 
         int target_id = findNearestId(dist_mat,id_without[i] );
+        if(target_id == -1)
+        {
+            cerr << "Error: not find nearest points" << endl;
+            return -1;
+        }
+//        cout <<  id_without[i] << "\'s target = " << target_id << endl;
+//        drawSpecID(cluster,id_without[i],target_id);
 
         id_link[ id_without[i] ] = target_id;
 
     }
 
-//    cout << id_link.size() << endl;
 
     // then fix change the cluster again
     for(int i = 0 ; i < cluster.size(); ++i)
@@ -136,28 +159,74 @@ int main()
         }
     }
 
+
+    Mat new_cl = getColorCluster(cluster);
+
+
     // update center
-    vector<cv::Point3f> new_center = getCenterFromCluster(cluster);
-    displayCenterWithCluster(new_center,cluster);
+    // it's useless since some surperpixels are not neighbors
+//    vector<cv::Point3f> new_center = getCenterFromCluster(cluster);
+//    displayCenterWithCluster(new_center,cluster);
 
 
 
     return 0;
 }
 
-int findNearestId(vec2dd& dist, int id)
+void drawSpecID(vec2di& cluster, int& ori_id, int& tar_id)
 {
-    int min = 10000;
+    Mat img = Mat::zeros(cluster[0].size(),cluster.size(),CV_8UC3);
+    for(int i = 0; i < cluster.size(); ++i)
+    {
+        for(int j =0; j < cluster[i].size(); ++j)
+        {
+            if(cluster[i][j] == ori_id)
+            {
+                img.at<Vec3b>(j,i)[0] = 255;
+                img.at<Vec3b>(j,i)[1] = 0;
+                img.at<Vec3b>(j,i)[2] = 0;
+            }
+            if(cluster[i][j] == tar_id)
+            {
+                img.at<Vec3b>(j,i)[0] = 0;
+                img.at<Vec3b>(j,i)[1] = 0;
+                img.at<Vec3b>(j,i)[2] = 255;
+            }
+        }
+    }
+
+    imshow("ori blue -> tar reg",img);
+    waitKey(0);
+
+}
+
+
+// return superpixels ID
+int findNearestId(vec2dd& dist, int& id)
+{
+    int min = 1000000;
+    int targ_id = -1;
 
     for(int i = 0; i < dist[id].size(); ++i )
     {// column
         if(dist[id][i] > 0 && min > dist[id][i])
         {
             min = dist[id][i];
+            targ_id = i;
         }
     }
 
-    return min;
+    for(int i = id; i < dist.size(); ++i)
+    {//  row
+        if(dist[i][id] > 0 && min > dist[i][id])
+        {
+            min = dist[id][i];
+            targ_id = i;
+        }
+
+    }
+
+    return targ_id;
 
 
 }
@@ -190,7 +259,7 @@ vec2dd createDistMat(vector<cv::Point3f> & center)
         {
             if(j == i)
             {
-                dist_ab.push_back(0);
+                dist_ab.push_back(-1); // beside itself
             }else{
                 dist_ab.push_back(distance(center[i],center[j]));
             }
@@ -278,6 +347,7 @@ void displayMergeImage(Mat & img1_col, vector<  cv::Point2f > &mat_point1, Mat &
     }
 
     imshow("mat",match_img);
+    imwrite("/home/arvr/Desktop/match.jpg",match_img);
     waitKey(0);
 
 }
