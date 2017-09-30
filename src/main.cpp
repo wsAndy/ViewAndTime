@@ -30,8 +30,10 @@ Mat getSingleCluster(vec2di & cluster);
 vec2di getSuperPixels(Mat& img1_col);
 // for  cv::Point3f, I define [x,y,counter]
 void displayCenterWithCluster(vector< cv::Point3f > &center, vec2di & cluster);
+
 vector<cv::Point3f> getCenterFromCluster(vec2di & cluster);
-//vector< vector<int> > convertCenterToArray( vector< cv::Point3f> &center);
+
+// calculate distance between two points in image coordinate
 double distance(cv::Point3f& , cv::Point3f& );
 
 vec2dd createDistMat(vector<cv::Point3f> & center);
@@ -55,6 +57,7 @@ void showNeighbor(vector< set<int> >&);
 
 vector<int> findNofeatureId(vector<  cv::Point2f >& ,vec2di& cluster);
 
+// have not complete
 void updateNofeatureRegion(vec2di&, vector< set<int>>& );
 
 
@@ -88,6 +91,9 @@ int main()
 
     vector<int> id_without = findNofeatureId(mat_point1,cluster);
 
+    cerr << "************************************************" <<endl
+         << "HERE, I need to use neighbor information, and to complete the function updateNofeatureRegion" << endl
+         << "************************************************" <<endl;
 //    vector< set<int> > neib = findNeighborSurperpixels(cluster);
 
     // update cluster, cluster changes after this step
@@ -139,8 +145,44 @@ int main()
         }
     }
 
+    // clustering features according to superpixel regions
+    vector< set<int> > region_featureID;
+    vector< cv::Mat> Homo;
+    for(int i = 0; i < findmaxclu(cluster); ++i)
+    {
+        set<int> tmp;
+        tmp.insert(-1);
+        region_featureID.push_back(tmp);
+    }
+    for(int i  =0; i < mat_point1.size(); ++i)
+    {
+        int id = cluster[int(mat_point1[i].x)][int(mat_point1[i].y)];
+        region_featureID[id].insert(i);
+    }
+    for(int i = 0; i < region_featureID.size(); ++i)
+    {
+        std::vector<cv::Point2f> obj;
+        std::vector<cv::Point2f> scene;
+        for(std::set<int>::iterator j = region_featureID[i].begin();
+            j!=region_featureID[i].end(); ++j)
+        {
+            if(*j != -1)
+            {
+                obj.push_back(mat_point1[*j]);
+                scene.push_back(mat_point2[*j]);
+            }
+        }
+        if(!obj.empty() && obj.size() >= 4) // obj.size() >= 4 is the lowest request,
+                                            // in function findNofeatureId, there also has a limitation
+        {
+            // calculate Homography for small region
+            Mat H = findHomography(obj,scene,RANSAC);
+            Homo.push_back(H);
+        }
 
-    Mat new_cl = getColorCluster(cluster);
+    }
+
+    cout << Homo.size() << endl;
 
 
     // update center
@@ -155,23 +197,23 @@ int main()
 
 vector<int> findNofeatureId(vector<  cv::Point2f >& mat_point1,vec2di& cluster)
 {
-    vector<bool> vec_bool_cluster;
+    vector<int> vec_count_cluster;
     int max_clu = findmaxclu(cluster);
 
     for(int i = 0; i < max_clu; ++i)
     {
-        vec_bool_cluster.push_back(false); // vec_bool_cluster -> ID
+        vec_count_cluster.push_back(0); // vec_count_cluster -> ID
     }
     for(int i = 0; i < mat_point1.size(); ++i)
     {
         int ID = cluster[int(mat_point1[i].x)][int(mat_point1[i].y)];
-        vec_bool_cluster[ID] = true;
+        vec_count_cluster[ID]++; // count the number of features in region
     }
 
     vector<int> id_without;
-    for(int i = 0; i < vec_bool_cluster.size(); ++i)
+    for(int i = 0; i < vec_count_cluster.size(); ++i)
     {
-        if(!vec_bool_cluster[i])
+        if(vec_count_cluster[i] < 4) // for homography ... 4 is the lowest request
         {
             id_without.push_back(i);
         }
