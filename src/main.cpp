@@ -37,6 +37,7 @@ vec2dd createDistMat(vector<cv::Point3f> & center);
 void updateDistMat(vec2dd& , vector<int>& );
 int findNearestId(vec2dd& ,int& );
 void drawSpecID(vec2di& , int&, int&);
+vector< set<int> > findNeighborSurperpixels(vec2di&);
 
 
 
@@ -72,7 +73,6 @@ int main()
 
     cout << "center size = " << center.size() << endl;
 
-
     vector<bool> vec_bool_cluster;
     int max_clu = findmaxclu(cluster);
 
@@ -95,32 +95,27 @@ int main()
         }
     }
 
-
-    //test  draw id_without region
-    Mat without_region = Mat::zeros(cluster[0].size(),cluster.size(),CV_8UC3);
-    for(int i = 0; i < cluster.size(); ++i)
+    vector< set<int> > neib = findNeighborSurperpixels(cluster);
+    cout << "------" <<endl;
+    for(int i  =0; i < neib.size(); ++i)
     {
-        for(int j = 0; j < cluster[i].size(); ++j)
+        if(neib[i].size() > 1)
         {
-            if( std::find(id_without.begin(), id_without.end(), cluster[i][j])!= id_without.end())
+            cout << i << " -> ";
+            for(std::set<int>::iterator j = neib[i].begin(); j != neib[i].end(); ++j)
             {
-                without_region.at<Vec3b>(j,i)[0] = 255;
-                without_region.at<Vec3b>(j,i)[1] = 255;
-                without_region.at<Vec3b>(j,i)[2] = 255;
+                cout << *j << " , ";
             }
+            cout << endl;
         }
     }
 
-    Mat cl = getColorCluster(cluster);
-    imwrite("/home/arvr/Desktop/original.jpg",cl);
-    Mat out;
-    addWeighted(without_region,0.7,cl,0.3,0,out);
-    imshow("out",out);
-    imwrite("/home/arvr/Desktop/without_region.jpg",out);
-    waitKey(0);
+    displayCenterWithCluster(center,cluster);
+
+    return 0;
 
 
-    vec2dd dist_mat = createDistMat(center);
+    vec2dd dist_mat = createDistMat(center); // if find neighbor uis right, then dist mat only need to calculate the distances between neighbor region
 
     updateDistMat(dist_mat,id_without);
 
@@ -172,6 +167,48 @@ int main()
 
     return 0;
 }
+
+
+vector< set<int> > findNeighborSurperpixels(vec2di& cluster)
+{
+    vector< set<int> > neighbor;
+    int max_clu = findmaxclu(cluster);
+
+    for(int i = 0; i < max_clu; ++i)
+    {
+        set<int> in;
+        in.insert(-1);
+        neighbor.push_back(in);
+    }
+
+
+    for(int i =0; i < cluster.size()-1; ++i)
+    {
+        for(int j =0 ;j < cluster[i].size()-1; ++j)
+        {
+            // for column
+            if(cluster[i][j+1] != cluster[i][j])
+            {
+                neighbor[cluster[i][j]].insert(cluster[i][j+1]);
+                neighbor[cluster[i][j+1]].insert(cluster[i][j]);
+            }
+
+            // for row
+
+            if(cluster[i+1][j] != cluster[i][j])
+            {
+                neighbor[cluster[i][j]].insert(cluster[i+1][j]);
+                neighbor[cluster[i+1][j]].insert(cluster[i][j]);
+            }
+
+        }
+    }
+
+    return neighbor;
+
+}
+
+
 
 void drawSpecID(vec2di& cluster, int& ori_id, int& tar_id)
 {
@@ -315,6 +352,8 @@ vector<cv::Point3f> getCenterFromCluster(vec2di & cluster)
 
 }
 
+
+
 void displayCenterWithCluster(vector< cv::Point3f > &center, vec2di & cluster)
 {
     Mat sin = getColorCluster(cluster);
@@ -326,7 +365,7 @@ void displayCenterWithCluster(vector< cv::Point3f > &center, vec2di & cluster)
             stringstream ss;
             ss << i;
             string str = ss.str();
-            putText(sin,str,Point2f(center[i].x, center[i].y),FONT_HERSHEY_COMPLEX,1,cv::Scalar(0, 255, 255),1,8,0);
+            putText(sin,str,Point2f(center[i].x, center[i].y),FONT_HERSHEY_COMPLEX,0.4,cv::Scalar(0, 0, 0),1,8,0);
         }
     }
     imshow("sin",sin);
@@ -373,6 +412,11 @@ void addTwoImageToOne(Mat &img1_col,Mat &img2_col,Mat &match_img)
      }
 
 }
+
+
+// vec2di cluster
+// 2d: each column
+// i: surperpixel ID
 
 vec2di getSuperPixels(Mat& img1_col)
 {
@@ -491,7 +535,7 @@ int findmaxclu(vector<vector<int> > &vec)
             }
         }
     }
-    return max;
+    return max+1; // since the vector donnot locate max at [max]
 
 }
 
