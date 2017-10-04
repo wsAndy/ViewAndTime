@@ -1,5 +1,5 @@
 ## ViewAndTime
-
+deformation-develop
 
 ### How to use(in ubuntu)
 
@@ -14,17 +14,17 @@ in ViewAndTime path,
 
 ### Example
 
-	for those original surpixels, like
-
-	![](./img/original.jpg)
+1. for those original surpixels, like
+![](./img/original.jpg)
+	
     
-	for those updated surperpixel, like
+2. for those updated surperpixel, like
 
-	![](./img/updat_cluster.jpg)
+![](./img/updat_cluster.jpg)
 
-	merge with original image, like
+merge with original image, like
 
-	![without_feature_region_is_bright](./img/without_feature.jpg)
+![without_feature_region_is_bright](./img/without_feature.jpg)
 
-	![](./img/without_region.jpg)
+![](./img/without_region.jpg)
 
