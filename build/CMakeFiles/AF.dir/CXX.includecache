@@ -6,31 +6,21 @@
 
 #IncludeRegexTransform: 
 
-../include/SLIC/slic.h
-opencv2/opencv.hpp
-../include/SLIC/opencv2/opencv.hpp
-stdio.h
-../include/SLIC/stdio.h
-math.h
-../include/SLIC/math.h
-float.h
-../include/SLIC/float.h
-vector
-../include/SLIC/vector
-
-/home/arvr/Desktop/ViewAndTime/src/main.cpp
+../include/AF/anisometric.hpp
 iostream
 -
-opencv2/opencv.hpp
-/home/arvr/Desktop/ViewAndTime/src/opencv2/opencv.hpp
-opencv2/nonfree/nonfree.hpp
-/home/arvr/Desktop/ViewAndTime/src/opencv2/nonfree/nonfree.hpp
 string
-/home/arvr/Desktop/ViewAndTime/src/string
-set
-/home/arvr/Desktop/ViewAndTime/src/set
-SLIC/slic.h
-/home/arvr/Desktop/ViewAndTime/src/SLIC/slic.h
+-
+cmath
+-
+algorithm
+-
+opencv2/opencv.hpp
+../include/AF/opencv2/opencv.hpp
+
+/Users/sheng/Documents/testopencv/ViewAndTime/src/AF/anisometric.cpp
+AF/anisometric.hpp
+/Users/sheng/Documents/testopencv/ViewAndTime/src/AF/AF/anisometric.hpp
 
 /usr/local/include/opencv2/calib3d/calib3d.hpp
 opencv2/core/core.hpp
@@ -221,14 +211,6 @@ string
 -
 iostream
 -
-
-/usr/local/include/opencv2/nonfree/features2d.hpp
-opencv2/features2d/features2d.hpp
-/usr/local/include/opencv2/nonfree/opencv2/features2d/features2d.hpp
-
-/usr/local/include/opencv2/nonfree/nonfree.hpp
-opencv2/nonfree/features2d.hpp
-/usr/local/include/opencv2/nonfree/opencv2/nonfree/features2d.hpp
 
 /usr/local/include/opencv2/objdetect/objdetect.hpp
 opencv2/core/core.hpp

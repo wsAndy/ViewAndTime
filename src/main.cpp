@@ -10,6 +10,8 @@
 #include "set"
 #include "map"
 #include "SLIC/slic.h"
+#include "AF/anisometric.hpp"
+
 
 
 using namespace std;
@@ -63,7 +65,7 @@ void updateNofeatureRegion(vec2di&, vector< set<int>>& );
 
 int main()
 {
-    std::string path = "/home/arvr/Desktop/3DVideos-distrib/MSR3DVideo-Ballet/";
+    std::string path = "/Users/sheng/Desktop/MSR3DVideo-Breakdancers/";
     Mat img1_col = imread( path + "cam0/color-cam0-f000.jpg");
     Mat img2_col = imread( path + "cam2/color-cam2-f000.jpg");
 
@@ -148,6 +150,8 @@ int main()
     // clustering features according to superpixel regions
     vector< set<int> > region_featureID;
     vector< cv::Mat> Homo;
+    std::map<int,int> homo_link;
+
     for(int i = 0; i < findmaxclu(cluster); ++i)
     {
         set<int> tmp;
@@ -172,17 +176,108 @@ int main()
                 scene.push_back(mat_point2[*j]);
             }
         }
+
         if(!obj.empty() && obj.size() >= 4) // obj.size() >= 4 is the lowest request,
                                             // in function findNofeatureId, there also has a limitation
         {
             // calculate Homography for small region
             Mat H = findHomography(obj,scene,RANSAC);
+            cerr << "TODO: use distance H to filter those outilers" <<endl;
+            /// todo
+            /// update H again.
             Homo.push_back(H);
+            homo_link[i] = Homo.size()-1;
         }
 
     }
 
-    cout << Homo.size() << endl;
+    cerr << " /// if update Homography again, then merge regions without Homography" <<endl
+         << "/// and update Homography again." << endl;
+
+    cout << "Homography size = " << Homo.size() << endl;
+//    for(std::map<int,int>::iterator it = homo_link.begin(); it!=homo_link.end(); ++it)
+//    {
+//        cout << it->first << " -> " << it->second <<endl;
+//    }
+
+    // 这边还是断了呀，h这个的计算，还是...有些乱，算了先试试看吧，使用H，来假设是线性变化的，来开始投影吧
+
+    Mat derformMat(cluster[0].size(), cluster.size(), CV_64FC3, Scalar(0,0,0));
+
+    Mat xSrcTrans = Mat(1,1,CV_64FC3,Scalar(0,0,0));
+
+
+    double max_r = 0, max_g = 0;
+
+    for(int i = 0; i < cluster.size(); ++i)
+    {
+        for(int j = 0; j < cluster[0].size(); ++j)
+        {
+            double temp[3][1] = { (double)j,(double)i,1 };
+            Mat xSrc = Mat(3,1,CV_64FC1,temp);
+            Mat temp_h;
+            temp_h = Homo[homo_link[cluster[i][j]]]; // should ensure each pixel maps to an Homography Mat
+            xSrc = temp_h*xSrc - xSrc;
+
+            xSrcTrans.at<Vec3d>(0,0)[0] = xSrc.at<Vec3d>(0,0)[0];
+            xSrcTrans.at<Vec3d>(0,0)[1] = xSrc.at<Vec3d>(1,0)[0];
+            xSrcTrans.at<Vec3d>(0,0)[2] = xSrc.at<Vec3d>(2,0)[0];
+
+            derformMat.at<Vec3d>(j,i)[0] = ((xSrcTrans.at<Vec3d>(0,0)[0]) );
+            derformMat.at<Vec3d>(j,i)[1] = ((xSrcTrans.at<Vec3d>(0,0)[1]) );
+            derformMat.at<Vec3d>(j,i)[2] = ((xSrcTrans.at<Vec3d>(0,0)[2]) );
+
+            if(max_r < (abs(xSrcTrans.at<Vec3d>(0,0)[0]) ))
+            {
+                max_r = (abs(xSrcTrans.at<Vec3d>(0,0)[0]) );
+            }
+
+            if(max_g < (abs(xSrcTrans.at<Vec3d>(0,0)[1]) ))
+            {
+                max_g = (abs(xSrcTrans.at<Vec3d>(0,0)[1]) );
+            }
+
+
+//            cout << int(abs(xSrcTrans.at<Vec3d>(0,0)[0]) ) <<endl;
+//            cout << int(abs(xSrcTrans.at<Vec3d>(0,0)[1]) ) <<endl;
+//            cout << int(abs(xSrcTrans.at<Vec3d>(0,0)[2]) ) <<endl;
+        }
+    }
+
+    // if derformation vector only use color information,
+    // or set the transformation as RGB values.
+
+    cout << "-----" <<endl;
+
+//    Mat testAF;
+//    cvtColor(derformMat,testAF,CV_RGB2GRAY);
+
+//    Mat out = testAF.clone();
+//    out.convertTo(out, CV_64FC1);
+
+    vector<Mat> vec_sp;
+    split(derformMat,vec_sp);
+
+    Mat out = vec_sp[0].clone();
+    out.convertTo(out, CV_32FC1);
+
+    PM_Diffusion pm(out);
+
+    out = pm.diffusion();
+    double min;
+    double max;
+    minMaxIdx(out, &min, &max);
+
+    out.convertTo(out, CV_8UC1, 255 / (max - min), -min);
+    imshow("Diffuesed Image", out);
+    waitKey(0);
+
+
+
+//    imshow("derformMat",derformMat);
+//    waitKey(0);
+
+
 
 
     // update center
@@ -213,7 +308,7 @@ vector<int> findNofeatureId(vector<  cv::Point2f >& mat_point1,vec2di& cluster)
     vector<int> id_without;
     for(int i = 0; i < vec_count_cluster.size(); ++i)
     {
-        if(vec_count_cluster[i] < 4) // for homography ... 4 is the lowest request
+        if(vec_count_cluster[i] < 10) // for homography ... 4 is the lowest request
         {
             id_without.push_back(i);
         }
@@ -531,7 +626,7 @@ vec2di getSuperPixels(Mat& img1_col)
     lab_img1 = &lab1;
 
     int w = img1_col.cols, h = img1_col.rows;
-    int nr_superpixels = 300;
+    int nr_superpixels = 200;
 
     int nc = 80;
 

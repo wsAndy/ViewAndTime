@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/SLIC.dir/src/SLIC/slic.cpp.o"
   "../lib/libSLIC.pdb"
-  "../lib/libSLIC.so"
+  "../lib/libSLIC.dylib"
 )
 
 # Per-language clean rules from dependency scanning.

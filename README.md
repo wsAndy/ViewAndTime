@@ -43,5 +43,4 @@ merge with original image, like
 <img src="./img/without_region.jpg" width="512" height="384" align=center/>
 
 
->>>>>>> master
 

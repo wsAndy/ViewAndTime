@@ -1,4 +1,6 @@
-/home/arvr/Desktop/ViewAndTime/build/CMakeFiles/rebuild_cache.dir
-/home/arvr/Desktop/ViewAndTime/build/CMakeFiles/run.dir
-/home/arvr/Desktop/ViewAndTime/build/CMakeFiles/edit_cache.dir
-/home/arvr/Desktop/ViewAndTime/build/CMakeFiles/SLIC.dir
+/Users/sheng/Documents/testopencv/ViewAndTime/build/CMakeFiles/SLIC.dir
+/Users/sheng/Documents/testopencv/ViewAndTime/build/CMakeFiles/edit_cache.dir
+/Users/sheng/Documents/testopencv/ViewAndTime/build/CMakeFiles/run.dir
+/Users/sheng/Documents/testopencv/ViewAndTime/build/CMakeFiles/test.dir
+/Users/sheng/Documents/testopencv/ViewAndTime/build/CMakeFiles/rebuild_cache.dir
+/Users/sheng/Documents/testopencv/ViewAndTime/build/CMakeFiles/AF.dir
