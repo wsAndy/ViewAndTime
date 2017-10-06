@@ -62,6 +62,13 @@ vector<int> findNofeatureId(vector<  cv::Point2f >& ,vec2di& cluster);
 // have not complete
 void updateNofeatureRegion(vec2di&, vector< set<int>>& );
 
+// get corresponsed maps
+Mat getCorresponseMaps(Mat& ,vector<  cv::Point2f >& ,vector<  cv::Point2f >& );
+
+// warp image and save the result
+void warp(Mat& img1_col, Mat& derformMat);
+void warp( Mat& img1_col, Mat& derformMat1,  Mat& img2_col, Mat& derformMat2, int Vir_num);
+
 
 int main()
 {
@@ -76,6 +83,8 @@ int main()
     matchTwoImageSURF(img1_col,img2_col, mat_point1, mat_point2);
     matchTwoImageORB(img1_col,img2_col, mat_point1, mat_point2);
 
+//    cout << "feature1 size = " << mat_point1.size() <<endl;
+
     /*
      *  show matching pixels in two image
      * */
@@ -88,54 +97,199 @@ int main()
 //        cout << "point1 size != point2 size" << endl;
 //    }
 
+    Mat derformMat1 = getCorresponseMaps(img1_col,mat_point1,mat_point2);
+    Mat derformMat2 = getCorresponseMaps(img2_col,mat_point2,mat_point1);
 
+/// a test
+/// warp(img1_col,derformMat1);
+
+    warp(img1_col, derformMat1, img2_col,derformMat2,10);
+
+    // AF, but how AF change the result ???
+//    vector<Mat> vec_sp;
+//    split(derformMat,vec_sp);
+
+//    Mat out = vec_sp[0].clone();
+//    out.convertTo(out, CV_32FC1);
+
+//    PM_Diffusion pm(out);
+
+//    out = pm.diffusion();
+//    double min;
+//    double max;
+//    minMaxIdx(out, &min, &max);
+
+//    out.convertTo(out, CV_8UC1, 255 / (max - min), -min);
+//    imshow("Diffuesed Image", out);
+//    waitKey(0);
+
+    return 0;
+}
+
+void warp( Mat& img1_col, Mat& derformMat1,  Mat& img2_col, Mat& derformMat2, int Vir_num)
+{
+    for(int ind = 1; ind < Vir_num+1; ++ind)
+    {
+        Mat vir_image1 = Mat::zeros(img1_col.rows, img1_col.cols, CV_8UC3);
+        Mat vir_image2 = Mat::zeros(img2_col.rows, img2_col.cols, CV_8UC3);
+
+        for(int i =0; i < img1_col.rows; ++i)
+        {
+            for(int j = 0; j < img1_col.cols; ++j)
+            {
+                int x =  i + int(derformMat1.at<Vec3d>(i,j)[0] * ind / (Vir_num+1) ); // row
+                int y =  j + int(derformMat1.at<Vec3d>(i,j)[1] * ind / (Vir_num+1) ); // col
+
+                if( x < 0 || x >= vir_image1.rows || y < 0 || y >= vir_image1.cols)
+                {
+                    continue;
+                }
+                vir_image1.at<Vec3b>(x,y)[0] = img1_col.at<Vec3b>(i,j)[0] ;
+                vir_image1.at<Vec3b>(x,y)[1] = img1_col.at<Vec3b>(i,j)[1] ;
+                vir_image1.at<Vec3b>(x,y)[2] = img1_col.at<Vec3b>(i,j)[2] ;
+            }
+        }
+
+        for(int i =0; i < img2_col.rows; ++i)
+        {
+            for(int j = 0; j < img2_col.cols; ++j)
+            {
+                int x =  i + int(derformMat2.at<Vec3d>(i,j)[0] * (1 - double(ind) / (Vir_num+1)) ); // row
+                int y =  j + int(derformMat2.at<Vec3d>(i,j)[1] * (1 - double(ind) / (Vir_num+1)) ); // col
+
+                if( x < 0 || x >= vir_image2.rows || y < 0 || y >= vir_image2.cols)
+                {
+                    continue;
+                }
+                vir_image2.at<Vec3b>(x,y)[0] = img2_col.at<Vec3b>(i,j)[0] ;
+                vir_image2.at<Vec3b>(x,y)[1] = img2_col.at<Vec3b>(i,j)[1] ;
+                vir_image2.at<Vec3b>(x,y)[2] = img2_col.at<Vec3b>(i,j)[2] ;
+            }
+        }
+
+        Mat blend_image;
+        addWeighted(vir_image1, double(ind)/(Vir_num+1) ,vir_image2, 1 - double(ind)/(Vir_num+1) ,0 ,blend_image);
+
+        stringstream ss;
+        string str_name;
+        ss << "vir";
+        ss << ind;
+        ss << ".jpg";
+        ss >> str_name;
+        ss.clear();
+//        imshow( str_name.c_str() ,vir_image);
+        imwrite("/Users/sheng/Desktop/save/"+str_name,blend_image);
+
+
+    }
+}
+
+void warp( Mat& img1_col, Mat& derformMat)
+{
+
+    for(int ind = 0; ind <11; ++ind)
+    {
+        // show interpolation virtual image
+        Mat vir_image = Mat::zeros(img1_col.rows,img1_col.cols,CV_8UC3);
+        for(int i =0; i < img1_col.rows; ++i)
+        {
+            for(int j = 0; j < img1_col.cols; ++j)
+            {
+                int x =  i + int(derformMat.at<Vec3d>(i,j)[0] * ind *0.1); // row
+                int y =  j + int(derformMat.at<Vec3d>(i,j)[1] * ind *0.1); // col
+
+                if( x < 0 || x >= vir_image.rows || y < 0 || y >= vir_image.cols)
+                {
+                    continue;
+                }
+
+                vir_image.at<Vec3b>(x,y)[0] = img1_col.at<Vec3b>(i,j)[0] ;
+
+                vir_image.at<Vec3b>(x,y)[1] = img1_col.at<Vec3b>(i,j)[1] ;
+
+                vir_image.at<Vec3b>(x,y)[2] = img1_col.at<Vec3b>(i,j)[2] ;
+
+            }
+        }
+
+        stringstream ss;
+        string str_name;
+        ss << "vir";
+        ss << ind;
+        ss << ".jpg";
+        ss >> str_name;
+        ss.clear();
+//        imshow( str_name.c_str() ,vir_image);
+        imwrite("/Users/sheng/Desktop/save/"+str_name,vir_image);
+//        waitKey(0);
+
+    }
+
+}
+
+Mat getCorresponseMaps(Mat& img1_col,vector<  cv::Point2f >& mat_point1,vector<  cv::Point2f >& mat_point2)
+{
     vec2di cluster = getSuperPixels(img1_col); // not follow sequences
+
+    Mat new_sup = getColorCluster(cluster);
+//    imshow("new_cluster",new_sup);
+
+//    waitKey(0);
+//    return 0;
+
 
     vector<int> id_without = findNofeatureId(mat_point1,cluster);
 
     cerr << "************************************************" <<endl
-         << "HERE, I need to use neighbor information, and to complete the function updateNofeatureRegion" << endl
+         << "HERE, I need to use neighbor information, and " << endl
+         << "complete the function updateNofeatureRegion" << endl
          << "************************************************" <<endl;
-//    vector< set<int> > neib = findNeighborSurperpixels(cluster);
-
-    // update cluster, cluster changes after this step
-//    updateNofeatureRegion(cluster,neib);
-
+/***
+ *
+ *    TODO
+    vector< set<int> > neib = findNeighborSurperpixels(cluster);
+    update cluster, cluster changes after this step
+    updateNofeatureRegion(cluster,neib);
+*/
     vector<cv::Point3f> center = getCenterFromCluster(cluster);
 
-
     vec2dd dist_mat = createDistMat(center);
+/***
+ *  TOADD
+ *
+ * if find neighbor is right,
+ * then dist mat only need to calculate the distances between neighbor region
+ *
+ *
+    vec2dd dist_mat = createDistMat(center,neib);
+*/
 
-//    vec2dd dist_mat = createDistMat(center,neib); // if find neighbor uis right, then dist mat only need to calculate the distances between neighbor region
-
-    // set the distance of those no features included surperpixels to -1
+    /// set the distance of those no features included surperpixels to -1
     updateDistMat(dist_mat,id_without);
 
-
-    // start to merge the neighbor superpixels
+    /// start to merge the neighbor superpixels
     std::map<int,int> id_link;
 
     for(int i = 0; i < id_without.size(); ++i)
     {
-
-        // i-th surperpixels ID donnot have feature
-        // id_without[i] means the superpixels' ID ,also the column number in dist_mat
+        /// i-th surperpixels ID donnot have feature
+        /// id_without[i] means the superpixels' ID ,also the column number in dist_mat
 
         int target_id = findNearestId(dist_mat,id_without[i] );
         if(target_id == -1)
         {
             cerr << "Error: not find nearest points" << endl;
-            return -1;
+            return Mat();
         }
-//        cout <<  id_without[i] << "\'s target = " << target_id << endl;
-//        drawSpecID(cluster,id_without[i],target_id);
+///        cout <<  id_without[i] << "\'s target = " << target_id << endl;
+///        drawSpecID(cluster,id_without[i],target_id);
 
         id_link[ id_without[i] ] = target_id;
 
     }
 
 
-    // then fix change the cluster again
+/// then fix change the cluster again
     for(int i = 0 ; i < cluster.size(); ++i)
     {
         for(int j = 0; j < cluster[i].size(); ++j)
@@ -147,7 +301,7 @@ int main()
         }
     }
 
-    // clustering features according to superpixel regions
+/// clustering features according to superpixel regions
     vector< set<int> > region_featureID;
     vector< cv::Mat> Homo;
     std::map<int,int> homo_link;
@@ -194,6 +348,7 @@ int main()
     cerr << " /// if update Homography again, then merge regions without Homography" <<endl
          << "/// and update Homography again." << endl;
 
+    cerr << "Incorrect Homographies lead to wrong results." <<endl;
     cout << "Homography size = " << Homo.size() << endl;
 //    for(std::map<int,int>::iterator it = homo_link.begin(); it!=homo_link.end(); ++it)
 //    {
@@ -236,59 +391,18 @@ int main()
             {
                 max_g = (abs(xSrcTrans.at<Vec3d>(0,0)[1]) );
             }
-
-
-//            cout << int(abs(xSrcTrans.at<Vec3d>(0,0)[0]) ) <<endl;
-//            cout << int(abs(xSrcTrans.at<Vec3d>(0,0)[1]) ) <<endl;
-//            cout << int(abs(xSrcTrans.at<Vec3d>(0,0)[2]) ) <<endl;
         }
     }
 
     // if derformation vector only use color information,
     // or set the transformation as RGB values.
 
-    cout << "-----" <<endl;
+//    imshow("vector",derformMat );
 
-//    Mat testAF;
-//    cvtColor(derformMat,testAF,CV_RGB2GRAY);
+    return  derformMat;
 
-//    Mat out = testAF.clone();
-//    out.convertTo(out, CV_64FC1);
-
-    vector<Mat> vec_sp;
-    split(derformMat,vec_sp);
-
-    Mat out = vec_sp[0].clone();
-    out.convertTo(out, CV_32FC1);
-
-    PM_Diffusion pm(out);
-
-    out = pm.diffusion();
-    double min;
-    double max;
-    minMaxIdx(out, &min, &max);
-
-    out.convertTo(out, CV_8UC1, 255 / (max - min), -min);
-    imshow("Diffuesed Image", out);
-    waitKey(0);
-
-
-
-//    imshow("derformMat",derformMat);
-//    waitKey(0);
-
-
-
-
-    // update center
-    // it's useless since some surperpixels are not neighbors
-//    vector<cv::Point3f> new_center = getCenterFromCluster(cluster);
-//    displayCenterWithCluster(new_center,cluster);
-
-
-
-    return 0;
 }
+
 
 vector<int> findNofeatureId(vector<  cv::Point2f >& mat_point1,vec2di& cluster)
 {
@@ -308,7 +422,9 @@ vector<int> findNofeatureId(vector<  cv::Point2f >& mat_point1,vec2di& cluster)
     vector<int> id_without;
     for(int i = 0; i < vec_count_cluster.size(); ++i)
     {
-        if(vec_count_cluster[i] < 10) // for homography ... 4 is the lowest request
+        if(vec_count_cluster[i] < 25) // for homography ... 4 is the lowest request
+                                      // 30 is a trick....
+                                      // small number leads to error matching and error warp result without update homography again
         {
             id_without.push_back(i);
         }
@@ -626,9 +742,9 @@ vec2di getSuperPixels(Mat& img1_col)
     lab_img1 = &lab1;
 
     int w = img1_col.cols, h = img1_col.rows;
-    int nr_superpixels = 200;
+    int nr_superpixels = 300;   // 300 is a trick， bigger nr_superpixel
 
-    int nc = 80;
+    int nc = 150;                // 150 is a trick, bigger nc lead to
 
     double step = sqrt((w*h)/(double)(nr_superpixels)  );
 
