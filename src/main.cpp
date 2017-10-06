@@ -13,7 +13,6 @@
 #include "AF/anisometric.hpp"
 
 
-
 using namespace std;
 using namespace  cv;
 
@@ -101,9 +100,9 @@ int main()
     Mat derformMat2 = getCorresponseMaps(img2_col,mat_point2,mat_point1);
 
 /// a test
-/// warp(img1_col,derformMat1);
+ warp(img1_col,derformMat1);
 
-    warp(img1_col, derformMat1, img2_col,derformMat2,10);
+//    warp(img1_col, derformMat1, img2_col,derformMat2,10);
 
     // AF, but how AF change the result ???
 //    vector<Mat> vec_sp;
@@ -170,6 +169,25 @@ void warp( Mat& img1_col, Mat& derformMat1,  Mat& img2_col, Mat& derformMat2, in
         Mat blend_image;
         addWeighted(vir_image1, double(ind)/(Vir_num+1) ,vir_image2, 1 - double(ind)/(Vir_num+1) ,0 ,blend_image);
 
+        Mat mask = cv::Mat::zeros(blend_image.rows, blend_image.cols, CV_8UC1);
+        for(int i = 0; i < blend_image.rows; ++i)
+        {
+            for(int j = 0; j < blend_image.cols; ++j)
+            {
+                if(blend_image.at<Vec3b>(i,j)[0] ==0 &&
+                   blend_image.at<Vec3b>(i,j)[1] ==0 &&
+                   blend_image.at<Vec3b>(i,j)[2] ==0     )
+                {
+                    mask.at<uchar>(i,j) = 255;
+                }
+            }
+        }
+
+//        imshow("mask",mask);
+//        waitKey(0);
+
+        cv::inpaint(blend_image,mask,blend_image,3,CV_INPAINT_TELEA);
+
         stringstream ss;
         string str_name;
         ss << "vir";
@@ -211,6 +229,26 @@ void warp( Mat& img1_col, Mat& derformMat)
 
             }
         }
+
+
+        Mat mask = cv::Mat::zeros(vir_image.rows, vir_image.cols, CV_8UC1);
+        for(int i = 0; i < vir_image.rows; ++i)
+        {
+            for(int j = 0; j < vir_image.cols; ++j)
+            {
+                if(vir_image.at<Vec3b>(i,j)[0] ==0 &&
+                   vir_image.at<Vec3b>(i,j)[1] ==0 &&
+                   vir_image.at<Vec3b>(i,j)[2] ==0     )
+                {
+                    mask.at<uchar>(i,j) = 255;
+                }
+            }
+        }
+
+        imshow("mask",mask);
+        waitKey(0);
+
+        cv::inpaint(vir_image,mask,vir_image,3,CV_INPAINT_TELEA);
 
         stringstream ss;
         string str_name;
