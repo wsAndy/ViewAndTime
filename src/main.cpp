@@ -62,12 +62,19 @@ vector<int> findNofeatureId(vector<  cv::Point2f >& ,vec2di& cluster);
 void updateNofeatureRegion(vec2di&, vector< set<int>>& );
 
 // get corresponsed maps
-Mat getCorresponseMaps(Mat& ,vector<  cv::Point2f >& ,vector<  cv::Point2f >& );
+Mat getCorresponseMaps( vec2di& ,vector<  cv::Point2f >& ,vector<  cv::Point2f >& );
 
 // warp image and save the result
 void warp(Mat& img1_col, Mat& derformMat);
 void warp( Mat& img1_col, Mat& derformMat1,  Mat& img2_col, Mat& derformMat2, int Vir_num);
 
+// judge homography by calculate distance between x2 and H*x1
+bool judgeHomoDistance( Mat& H,vector<cv::Point2f>& obj,vector<cv::Point2f>& scene );
+
+void iteratorGetHomo(vec2di& , std::vector<cv::Mat>&, std::map<int,int>&, std::vector<cv::Point2f>&, std::vector<cv::Point2f>& );
+
+
+#define FEATURE_NUMBER_REGION 30
 
 int main()
 {
@@ -96,10 +103,14 @@ int main()
 //        cout << "point1 size != point2 size" << endl;
 //    }
 
-    Mat derformMat1 = getCorresponseMaps(img1_col,mat_point1,mat_point2);
-    Mat derformMat2 = getCorresponseMaps(img2_col,mat_point2,mat_point1);
+    vec2di cluster1 = getSuperPixels(img1_col);
+//    vec2di cluster2 = getSuperPixels(img2_col);
+
+    Mat derformMat1 = getCorresponseMaps(cluster1, mat_point1, mat_point2);
+//    Mat derformMat2 = getCorresponseMaps(cluster2, mat_point2, mat_point1);
 
 /// a test
+  cout << "start to warp" <<endl;
  warp(img1_col,derformMat1);
 
 //    warp(img1_col, derformMat1, img2_col,derformMat2,10);
@@ -245,10 +256,13 @@ void warp( Mat& img1_col, Mat& derformMat)
             }
         }
 
-        imshow("mask",mask);
-        waitKey(0);
+//        imshow("mask",mask);
+//        waitKey(0);
 
-        cv::inpaint(vir_image,mask,vir_image,3,CV_INPAINT_TELEA);
+
+// inpaint cost too much time !!!!
+        cout << "inpaint cost too much time" <<endl;
+//        cv::inpaint(vir_image,mask,vir_image,3,CV_INPAINT_TELEA);
 
         stringstream ss;
         string str_name;
@@ -265,18 +279,13 @@ void warp( Mat& img1_col, Mat& derformMat)
 
 }
 
-Mat getCorresponseMaps(Mat& img1_col,vector<  cv::Point2f >& mat_point1,vector<  cv::Point2f >& mat_point2)
+void iteratorGetHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, std::vector<cv::Point2f>& mat_point1, std::vector<cv::Point2f>& mat_point2)
 {
-    vec2di cluster = getSuperPixels(img1_col); // not follow sequences
 
-    Mat new_sup = getColorCluster(cluster);
-//    imshow("new_cluster",new_sup);
-
-//    waitKey(0);
-//    return 0;
+    Homo.clear();
+    homo_link.clear();
 
 
-    vector<int> id_without = findNofeatureId(mat_point1,cluster);
 
     cerr << "************************************************" <<endl
          << "HERE, I need to use neighbor information, and " << endl
@@ -288,6 +297,11 @@ Mat getCorresponseMaps(Mat& img1_col,vector<  cv::Point2f >& mat_point1,vector< 
     vector< set<int> > neib = findNeighborSurperpixels(cluster);
     update cluster, cluster changes after this step
     updateNofeatureRegion(cluster,neib);
+
+    *   a problem is that if few feature in the image,
+    *   many superpixels will not have features and
+    *   it's hard to merge all of them
+
 */
     vector<cv::Point3f> center = getCenterFromCluster(cluster);
 
@@ -301,6 +315,7 @@ Mat getCorresponseMaps(Mat& img1_col,vector<  cv::Point2f >& mat_point1,vector< 
  *
     vec2dd dist_mat = createDistMat(center,neib);
 */
+    vector<int> id_without = findNofeatureId(mat_point1,cluster);
 
     /// set the distance of those no features included surperpixels to -1
     updateDistMat(dist_mat,id_without);
@@ -316,8 +331,7 @@ Mat getCorresponseMaps(Mat& img1_col,vector<  cv::Point2f >& mat_point1,vector< 
         int target_id = findNearestId(dist_mat,id_without[i] );
         if(target_id == -1)
         {
-            cerr << "Error: not find nearest points" << endl;
-            return Mat();
+            cerr << "Error: not find nearest points from ID [" <<  id_without[i] << "]"<< endl;
         }
 ///        cout <<  id_without[i] << "\'s target = " << target_id << endl;
 ///        drawSpecID(cluster,id_without[i],target_id);
@@ -340,9 +354,10 @@ Mat getCorresponseMaps(Mat& img1_col,vector<  cv::Point2f >& mat_point1,vector< 
     }
 
 /// clustering features according to superpixel regions
+///
     vector< set<int> > region_featureID;
-    vector< cv::Mat> Homo;
-    std::map<int,int> homo_link;
+    std::vector<int> merge_again_id;
+    bool bool_merge_again = false; // for special cases when some region have too much outliers and need to merge with other region again
 
     for(int i = 0; i < findmaxclu(cluster); ++i)
     {
@@ -350,11 +365,12 @@ Mat getCorresponseMaps(Mat& img1_col,vector<  cv::Point2f >& mat_point1,vector< 
         tmp.insert(-1);
         region_featureID.push_back(tmp);
     }
-    for(int i  =0; i < mat_point1.size(); ++i)
+    for(int i = 0; i < mat_point1.size(); ++i)
     {
         int id = cluster[int(mat_point1[i].x)][int(mat_point1[i].y)];
-        region_featureID[id].insert(i);
+        region_featureID[id].insert(i); // means id-th superpixel save feature i-th feature
     }
+
     for(int i = 0; i < region_featureID.size(); ++i)
     {
         std::vector<cv::Point2f> obj;
@@ -369,6 +385,7 @@ Mat getCorresponseMaps(Mat& img1_col,vector<  cv::Point2f >& mat_point1,vector< 
             }
         }
 
+
         if(!obj.empty() && obj.size() >= 4) // obj.size() >= 4 is the lowest request,
                                             // in function findNofeatureId, there also has a limitation
         {
@@ -377,11 +394,86 @@ Mat getCorresponseMaps(Mat& img1_col,vector<  cv::Point2f >& mat_point1,vector< 
             cerr << "TODO: use distance H to filter those outilers" <<endl;
             /// todo
             /// update H again.
-            Homo.push_back(H);
-            homo_link[i] = Homo.size()-1;
+            if( judgeHomoDistance(H,obj,scene) )
+            {
+                Homo.push_back(H);
+                homo_link[i] = Homo.size()-1;
+            }else{
+                // obj and scene have been updated in judgeHomoDistance(H,obj,scene)
+                // again and update Homography
+
+                if(!obj.empty() && obj.size() >= 4 && scene.size() >= 4)
+                {
+                    H = findHomography(obj,scene,RANSAC);
+                    Homo.push_back(H);
+                    homo_link[i] = Homo.size()-1;
+                }else{
+                    // merge region again
+                    cout << endl<<endl<< "need merge region, since this region donnot have enough feature" <<endl<<endl;
+                    merge_again_id.push_back( i );
+                    bool_merge_again = true;
+//                    break; // don't break, save those
+
+                    // break from for(int i = 0; i < region_featureID.size(); ++i)
+                    // then update `superpixel`,`center`, `region`
+
+                }
+
+            }
         }
 
+    } // for(int i = 0; i < region_featureID.size(); ++i)
+
+    if(bool_merge_again)
+    {
+        // here, write update again, maybe its a big work, but since this case occurs by chance and the update coda is too chaos
+        // write it additionally
+
+        /// ********************************************************
+        /// input: merge_again_id
+        ///        cluster
+        /// ********************************************************
+
+        // update cluster first
+        std::map<int,int> id_link_again;
+        for(int i = 0; i < merge_again_id.size(); ++i)
+        {
+            // superpixel id : merge_again_id[i]
+            int target_id = findNearestId(dist_mat, merge_again_id[i]);
+            if(target_id == -1)
+            {
+                cerr << "Error: not find nearest points for ID [" << merge_again_id[i] << "]" << endl;
+            }
+            id_link_again[ merge_again_id[i] ] = target_id;
+        }
+
+        for(int i = 0 ; i < cluster.size(); ++i)
+        {
+            for(int j = 0; j < cluster[i].size(); ++j)
+            {
+                if(std::find(merge_again_id.begin(), merge_again_id.end(),cluster[i][j])!=merge_again_id.end())
+                {
+                    cluster[i][j] = id_link_again[ cluster[i][j] ];
+                }
+            }
+        }
+
+        // now cluster update again
+        // run again
+
+        iteratorGetHomo(cluster, Homo, homo_link, mat_point1, mat_point2);
+
     }
+
+
+}
+
+Mat getCorresponseMaps(vec2di& cluster,vector<  cv::Point2f >& mat_point1,vector<  cv::Point2f >& mat_point2)
+{
+
+    vector< cv::Mat> Homo;
+    std::map<int,int> homo_link;
+    iteratorGetHomo(cluster,Homo,homo_link, mat_point1, mat_point2);
 
     cerr << " /// if update Homography again, then merge regions without Homography" <<endl
          << "/// and update Homography again." << endl;
@@ -441,6 +533,75 @@ Mat getCorresponseMaps(Mat& img1_col,vector<  cv::Point2f >& mat_point1,vector< 
 
 }
 
+bool judgeHomoDistance( Mat& H,vector<cv::Point2f>& obj,vector<cv::Point2f>& scene )
+{
+    vector<int> outlier_id;
+    for(int i =0 ;i < obj.size(); ++i)
+    {
+        double x1_[3][1] = { obj[i].x,obj[i].y,1 };
+        Mat x1 = Mat(3,1,CV_64FC1,x1_);
+        double x2_[3][1] = { scene[i].x,scene[i].y,1 };
+        Mat x2 = Mat(3,1,CV_64FC1,x2_);
+
+        Mat dil = H*x1 - x2;
+        if(sqrt( pow(dil.at<Vec3d>(0,0)[0],2) + pow(dil.at<Vec3d>(1,0)[0],2) ) <= 3 ) // within 3 pixel regions
+        {
+            continue;
+        }else{
+            outlier_id.push_back(i);
+        }
+
+    }
+
+    if(outlier_id.size() == 0)
+    {
+        return true;
+    }
+    else{
+        // update obj and scene first
+        int count = 0;
+
+        for(int i = 0; i < outlier_id.size(); ++i)
+        {
+            obj[ outlier_id[i] ].x = -10;
+            scene[ outlier_id[i] ].x = -10;
+        }
+        for(std::vector<cv::Point2f>::iterator it = obj.begin(); it != obj.end();)
+        {
+            if( abs((*it).x+10) < 1e-4 )
+            {
+                it = obj.erase(it);
+                count++;
+            }else{
+                ++it;
+            }
+            if(count >= outlier_id.size())
+            {
+                break;
+            }
+        }
+
+        count = 0;
+        for(std::vector<cv::Point2f>::iterator it = scene.begin(); it != scene.end();)
+        {
+            if( abs((*it).x+10) < 1e-4 )
+            {
+                it = scene.erase(it);
+                count++;
+            }else{
+                ++it;
+            }
+            if(count >= outlier_id.size())
+            {
+                break;
+            }
+        }
+        // update obj and scene end.
+
+        return false;
+    }
+}
+
 
 vector<int> findNofeatureId(vector<  cv::Point2f >& mat_point1,vec2di& cluster)
 {
@@ -460,7 +621,7 @@ vector<int> findNofeatureId(vector<  cv::Point2f >& mat_point1,vec2di& cluster)
     vector<int> id_without;
     for(int i = 0; i < vec_count_cluster.size(); ++i)
     {
-        if(vec_count_cluster[i] < 25) // for homography ... 4 is the lowest request
+        if(vec_count_cluster[i] < FEATURE_NUMBER_REGION) // for homography ... 4 is the lowest request
                                       // 30 is a trick....
                                       // small number leads to error matching and error warp result without update homography again
         {
@@ -662,6 +823,7 @@ vec2dd createDistMat(vector<cv::Point3f> & center, vector< set<int> >& neib)
 
     return dist_mat;
 }
+
 
 
 double distance(cv::Point3f& point1 , cv::Point3f& point2)
