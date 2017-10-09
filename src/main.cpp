@@ -74,7 +74,7 @@ bool judgeHomoDistance( Mat& H,vector<cv::Point2f>& obj,vector<cv::Point2f>& sce
 void iteratorGetHomo(vec2di& , std::vector<cv::Mat>&, std::map<int,int>&, std::vector<cv::Point2f>&, std::vector<cv::Point2f>& );
 
 
-#define FEATURE_NUMBER_REGION 30
+#define FEATURE_NUMBER_REGION 25
 
 int main()
 {
@@ -110,8 +110,8 @@ int main()
 //    Mat derformMat2 = getCorresponseMaps(cluster2, mat_point2, mat_point1);
 
 /// a test
-  cout << "start to warp" <<endl;
- warp(img1_col,derformMat1);
+    cout << "start to warp" <<endl;
+    warp(img1_col,derformMat1);
 
 //    warp(img1_col, derformMat1, img2_col,derformMat2,10);
 
@@ -197,7 +197,7 @@ void warp( Mat& img1_col, Mat& derformMat1,  Mat& img2_col, Mat& derformMat2, in
 //        imshow("mask",mask);
 //        waitKey(0);
 
-        cv::inpaint(blend_image,mask,blend_image,3,CV_INPAINT_TELEA);
+//        cv::inpaint(blend_image,mask,blend_image,3,CV_INPAINT_TELEA);
 
         stringstream ss;
         string str_name;

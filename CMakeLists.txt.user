@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.3.1, 2017-10-06T18:04:09. -->
+<!-- Written by QtCreator 4.3.1, 2017-10-06T21:17:08. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -165,7 +165,7 @@
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguation.Title">run</value>
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.Arguments"></value>
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.UserWorkingDirectory"></value>
-    <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.UserWorkingDirectory.default">/var/folders/l6/krv58mvs6td9vyq8c5whyx7r0000gn/T/QtCreator-Que4H8/qtc-cmake-9pQP1M6g</value>
+    <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.UserWorkingDirectory.default">/Users/sheng/Documents/testopencv/ViewAndTime/build</value>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">run</value>
