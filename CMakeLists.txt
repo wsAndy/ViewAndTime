@@ -49,6 +49,16 @@ target_link_libraries(AF
     ${OpenCV_LIBS}
 )
 
+# here you cannot add shape_match now
+# donnot need it since shape match could be solved by auction algorithm
+# you just need to calculate the cost Matrix
+#add_library( ShapeMatch SHARED
+
+#    src/ShapeMatch/shape_match.cpp
+# )
+#target_link_libraries(ShapeMatch
+#    ${OpenCV_LIBS}
+#)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/)
 

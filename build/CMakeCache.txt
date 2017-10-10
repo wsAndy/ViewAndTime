@@ -208,6 +208,9 @@ QT_QMAKE_EXECUTABLE:STRING=
 //Dependencies for the target
 SLIC_LIB_DEPENDS:STATIC=general;opencv_videostab;general;opencv_video;general;opencv_ts;general;opencv_superres;general;opencv_stitching;general;opencv_photo;general;opencv_ocl;general;opencv_objdetect;general;opencv_nonfree;general;opencv_ml;general;opencv_legacy;general;opencv_imgproc;general;opencv_highgui;general;opencv_gpu;general;opencv_flann;general;opencv_features2d;general;opencv_core;general;opencv_contrib;general;opencv_calib3d;
 
+//Dependencies for the target
+ShapeMatch_LIB_DEPENDS:STATIC=general;opencv_videostab;general;opencv_video;general;opencv_ts;general;opencv_superres;general;opencv_stitching;general;opencv_photo;general;opencv_ocl;general;opencv_objdetect;general;opencv_nonfree;general;opencv_ml;general;opencv_legacy;general;opencv_imgproc;general;opencv_highgui;general;opencv_gpu;general;opencv_flann;general;opencv_features2d;general;opencv_core;general;opencv_contrib;general;opencv_calib3d;
+
 //Value Computed by CMake
 ViewAndTime_BINARY_DIR:STATIC=/Users/sheng/Documents/testopencv/ViewAndTime/build
 
