@@ -2,6 +2,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include "opencv2/features2d/features2d.hpp"
 
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -446,15 +447,29 @@ void getMatchShape(Mat& img1_,  vector<Point2f>& contourPts1, Mat& img2_,  vecto
         con2.push_back(p2);
     }
 
-
     contourPts1.clear();
     contourPts2.clear();
 
-    for(int i = 0; i < con1.size(); ++i)
+////  use RANSAC thus jump
+//    for(int i = 0; i < con1.size(); ++i)
+//    {
+//        contourPts1.push_back(con1[i]);
+//        contourPts2.push_back(con2[i]);
+//    }
+
+
+    vector<uchar> RansacStatus;
+    Mat Fundamental= findFundamentalMat(con1,con2,RansacStatus,8);
+
+    for (size_t i=0;i<con1.size();i++)
     {
-        contourPts1.push_back(con1[i]);
-        contourPts2.push_back(con2[i]);
+        if (RansacStatus[i]!=0)
+        {
+            contourPts1.push_back(con1[i]);
+            contourPts2.push_back(con2[i]);
+        }
     }
+
 
 //    for(int i = 0; i < link1.size() ; ++i )
 //    {

@@ -23,7 +23,7 @@ void matchTwoImageORB(Mat &img1_col, Mat &img2_col, vector< cv::Point2f> & ,vect
 int findmaxclu(vec2di& vec);
 void addTwoImageToOne(Mat& ,Mat&, Mat&);
 void displayMergeImage(Mat & , vector<  cv::Point2f > & , Mat &, vector<  cv::Point2f > &);
-void displayShapeMatchImg(Mat& , vector<Point2f>&, Mat&, vector<Point2f>);
+void displayShapeMatchImg(Mat& , vector<Point2f>&, Mat&, vector<Point2f>& );
 
 
 
@@ -74,10 +74,11 @@ void warp( Mat& img1_col, Mat& derformMat1,  Mat& img2_col, Mat& derformMat2, in
 // judge homography by calculate distance between x2 and H*x1
 bool judgeHomoDistance( Mat& H,vector<cv::Point2f>& obj,vector<cv::Point2f>& scene );
 
-void iteratorGetHomo(vec2di& , std::vector<cv::Mat>&, std::map<int,int>&, std::vector<cv::Point2f>&, std::vector<cv::Point2f>& );
+void iteratorGetHomo(vec2di& , std::vector<cv::Mat>&, std::map<int,int>&, std::vector<cv::Point2f>&, std::vector<cv::Point2f>&, int& );
 
 
-#define FEATURE_NUMBER_REGION 25
+#define FEATURE_NUMBER_REGION 5
+#define ITERATOR_TIMES_FOR_HOMO 10
 
 
 
@@ -99,7 +100,8 @@ int main()
  *  show matching shape.
  *
  */
-//displayShapeMatchImg(img1_col,mat_point1,img2_col,mat_point2);
+//    displayShapeMatchImg(img1_col,mat_point1,img2_col,mat_point2);
+//    return 0;
 
 /***
  *
@@ -112,9 +114,12 @@ int main()
 
 //    cout << "feature1 size = " << mat_point1.size() <<endl;
 
-    /*
-     *  show matching pixels in two image
-     * */
+
+/****
+ *
+ *    show matching pixels in two image
+ *
+ */
 //    if(mat_point1.size() == mat_point2.size())
 //    {
 
@@ -128,6 +133,8 @@ int main()
     vec2di cluster1 = getSuperPixels(img1_col);
 //    vec2di cluster2 = getSuperPixels(img2_col);
 
+    cout << "mat point1 = " << mat_point1.size() <<endl;
+    cout << "mat point2 = " << mat_point2.size() <<endl;
     Mat derformMat1 = getCorresponseMaps(cluster1, mat_point1, mat_point2);
 //    Mat derformMat2 = getCorresponseMaps(cluster2, mat_point2, mat_point1);
 
@@ -303,13 +310,14 @@ void warp( Mat& img1_col, Mat& derformMat)
 
 }
 
-void iteratorGetHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, std::vector<cv::Point2f>& mat_point1, std::vector<cv::Point2f>& mat_point2)
+void iteratorGetHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, std::vector<cv::Point2f>& mat_point1, std::vector<cv::Point2f>& mat_point2, int& count)
 {
+
+
+    count = count + 1;
 
     Homo.clear();
     homo_link.clear();
-
-
 
     cerr << "************************************************" <<endl
          << "HERE, I need to use neighbor information, and " << endl
@@ -341,8 +349,14 @@ void iteratorGetHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int,i
 */
     vector<int> id_without = findNofeatureId(mat_point1,cluster);
 
+    cout << "id_without size = " << id_without.size() << endl;
+
+//    displayCenterWithCluster(center,cluster);
+
     /// set the distance of those no features included surperpixels to -1
     updateDistMat(dist_mat,id_without);
+
+
 
     /// start to merge the neighbor superpixels
     std::map<int,int> id_link;
@@ -485,7 +499,12 @@ void iteratorGetHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int,i
         // now cluster update again
         // run again
 
-        iteratorGetHomo(cluster, Homo, homo_link, mat_point1, mat_point2);
+        cout << "mat_point = " <<  mat_point1.size() <<endl;
+
+        if(count < ITERATOR_TIMES_FOR_HOMO)
+        {
+            iteratorGetHomo(cluster, Homo, homo_link, mat_point1, mat_point2, count);
+        }
 
     }
 
@@ -497,7 +516,8 @@ Mat getCorresponseMaps(vec2di& cluster,vector<  cv::Point2f >& mat_point1,vector
 
     vector< cv::Mat> Homo;
     std::map<int,int> homo_link;
-    iteratorGetHomo(cluster,Homo,homo_link, mat_point1, mat_point2);
+    int counter_gethomo = 0;
+    iteratorGetHomo(cluster,Homo,homo_link, mat_point1, mat_point2, counter_gethomo);
 
     cerr << " /// if update Homography again, then merge regions without Homography" <<endl
          << "/// and update Homography again." << endl;
@@ -645,6 +665,7 @@ vector<int> findNofeatureId(vector<  cv::Point2f >& mat_point1,vec2di& cluster)
     vector<int> id_without;
     for(int i = 0; i < vec_count_cluster.size(); ++i)
     {
+//        cout << vec_count_cluster[i] << endl;
         if(vec_count_cluster[i] < FEATURE_NUMBER_REGION) // for homography ... 4 is the lowest request
                                       // 30 is a trick....
                                       // small number leads to error matching and error warp result without update homography again
@@ -1144,20 +1165,20 @@ void matchTwoImageORB(Mat &img1_col, Mat& img2_col, vector< cv::Point2f > & mat_
     vector<uchar> RansacStatus;
     Mat Fundamental= findFundamentalMat(p01,p02,RansacStatus,FM_RANSAC);
 
-    vector<KeyPoint> RR_keypoint01,RR_keypoint02;
-    vector<DMatch> RR_matches;            //重新定义RR_keypoint 和RR_matches来存储新的关键点和匹配矩阵
-    int index=0;
+//    vector<KeyPoint> RR_keypoint01,RR_keypoint02;
+//    vector<DMatch> RR_matches;            //重新定义RR_keypoint 和RR_matches来存储新的关键点和匹配矩阵
+//    int index=0;
 
     for (size_t i=0;i<good_matches.size();i++)
     {
         if (RansacStatus[i]!=0)
         {
-            RR_keypoint01.push_back(R_keypoint01[i]);
-            RR_keypoint02.push_back(R_keypoint02[i]);
-            good_matches[i].queryIdx=index;
-            good_matches[i].trainIdx=index;
-            RR_matches.push_back(good_matches[i]);
-            index++;
+//            RR_keypoint01.push_back(R_keypoint01[i]);
+//            RR_keypoint02.push_back(R_keypoint02[i]);
+//            good_matches[i].queryIdx=index;
+//            good_matches[i].trainIdx=index;
+//            RR_matches.push_back(good_matches[i]);
+//            index++;
 
 
             mat_point1.push_back(R_keypoint01[i].pt);
