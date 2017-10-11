@@ -11,6 +11,7 @@
 #include "map"
 #include "SLIC/slic.h"
 #include "AF/anisometric.hpp"
+#include "ShapeMatch/shapematch.h"
 
 
 using namespace std;
@@ -22,6 +23,8 @@ void matchTwoImageORB(Mat &img1_col, Mat &img2_col, vector< cv::Point2f> & ,vect
 int findmaxclu(vec2di& vec);
 void addTwoImageToOne(Mat& ,Mat&, Mat&);
 void displayMergeImage(Mat & , vector<  cv::Point2f > & , Mat &, vector<  cv::Point2f > &);
+void displayShapeMatchImg(Mat& , vector<Point2f>&, Mat&, vector<Point2f>);
+
 
 
 // for superpixels
@@ -76,18 +79,36 @@ void iteratorGetHomo(vec2di& , std::vector<cv::Mat>&, std::map<int,int>&, std::v
 
 #define FEATURE_NUMBER_REGION 25
 
+
+
+
 int main()
 {
     std::string path = "/Users/sheng/Desktop/MSR3DVideo-Breakdancers/";
     Mat img1_col = imread( path + "cam0/color-cam0-f000.jpg");
     Mat img2_col = imread( path + "cam2/color-cam2-f000.jpg");
 
+    resize(img1_col,img1_col,cv::Size(int(img1_col.cols/2),int(img1_col.rows/2)));
+    resize(img2_col,img2_col,cv::Size(int(img2_col.cols/2),int(img2_col.rows/2)));
 
     vector<  cv::Point2f > mat_point1, mat_point2;
+    getMatchShape(img1_col,mat_point1,img2_col,mat_point2);
 
-    // use ORB and SURF features to match pixels
-    matchTwoImageSURF(img1_col,img2_col, mat_point1, mat_point2);
-    matchTwoImageORB(img1_col,img2_col, mat_point1, mat_point2);
+/***
+ *
+ *  show matching shape.
+ *
+ */
+//displayShapeMatchImg(img1_col,mat_point1,img2_col,mat_point2);
+
+/***
+ *
+ *    use ORB and SURF features to match pixels
+ *
+ *
+ */
+//    matchTwoImageSURF(img1_col,img2_col, mat_point1, mat_point2);
+//    matchTwoImageORB(img1_col,img2_col, mat_point1, mat_point2);
 
 //    cout << "feature1 size = " << mat_point1.size() <<endl;
 
@@ -102,6 +123,7 @@ int main()
 //    }else{
 //        cout << "point1 size != point2 size" << endl;
 //    }
+
 
     vec2di cluster1 = getSuperPixels(img1_col);
 //    vec2di cluster2 = getSuperPixels(img2_col);
@@ -135,6 +157,8 @@ int main()
 
     return 0;
 }
+
+
 
 void warp( Mat& img1_col, Mat& derformMat1,  Mat& img2_col, Mat& derformMat2, int Vir_num)
 {
@@ -901,7 +925,7 @@ void displayMergeImage(Mat & img1_col, vector<  cv::Point2f > &mat_point1, Mat &
     }
 
     imshow("mat",match_img);
-    imwrite("/home/arvr/Desktop/match.jpg",match_img);
+//    imwrite("/home/arvr/Desktop/match.jpg",match_img);
     waitKey(0);
 
 }
@@ -1258,5 +1282,31 @@ void  matchTwoImageSURF(Mat& img1_col, Mat& img2_col, vector< cv::Point2f > & ma
 //         imshow("after ransac",img_RR_matches);
 
 //         waitKey(0);
+
+}
+
+
+
+void displayShapeMatchImg(Mat& img1_col, vector<Point2f>& mat_point1, Mat &img2_col, vector<Point2f>& mat_point2)
+{
+
+    pair<Point2f,Point2f> mm = getMinMax(mat_point1, mat_point2);
+    int sizex = mm.second.x + (int) ((mm.second.x - mm.first.x) * 0.1);
+    int sizey = mm.second.y + (int) ((mm.second.y - mm.first.y) * 0.1);
+
+    displayMergeImage(img1_col,mat_point1,img2_col,mat_point2);
+
+    Mat shsh = Mat::zeros(sizey,sizex,CV_8UC3);
+
+    for(int i = 0; i < mat_point1.size(); ++i)
+    {
+        circle(shsh,mat_point1[i],1,Scalar(0,0,255));
+        circle(shsh,mat_point2[i],1,Scalar(255,0,0));
+        line(shsh,mat_point1[i],mat_point2[i],Scalar(255,255,255));
+    }
+
+    imshow("shsh",shsh);
+    waitKey(0);
+
 
 }

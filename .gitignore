@@ -29,3 +29,5 @@
 
 # self file
 *.log
+
+build/*

@@ -4,6 +4,8 @@
 CMakeFiles/run.dir/src/main.cpp.o
  ../include/AF/anisometric.hpp
  ../include/SLIC/slic.h
+ /Users/sheng/Documents/testopencv/ViewAndTime/src/ShapeMatch/lap.h
+ /Users/sheng/Documents/testopencv/ViewAndTime/src/ShapeMatch/shapematch.h
  /Users/sheng/Documents/testopencv/ViewAndTime/src/main.cpp
  /usr/local/include/opencv2/calib3d/calib3d.hpp
  /usr/local/include/opencv2/contrib/contrib.hpp

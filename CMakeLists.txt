@@ -54,7 +54,8 @@ target_link_libraries(AF
 # you just need to calculate the cost Matrix
 #add_library( ShapeMatch SHARED
 
-#    src/ShapeMatch/shape_match.cpp
+#    src/ShapeMatch/shapematch.h
+#    src/ShapeMatch/lap.h
 # )
 #target_link_libraries(ShapeMatch
 #    ${OpenCV_LIBS}
@@ -63,7 +64,7 @@ target_link_libraries(AF
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/)
 
 
-add_executable(run src/main.cpp)
+add_executable(run src/main.cpp  src/ShapeMatch/shapematch.h  src/ShapeMatch/lap.h)
 target_link_libraries(run SLIC AF)
 
 

@@ -3,6 +3,8 @@
 
 CMakeFiles/run.dir/src/main.cpp.o: ../include/AF/anisometric.hpp
 CMakeFiles/run.dir/src/main.cpp.o: ../include/SLIC/slic.h
+CMakeFiles/run.dir/src/main.cpp.o: ../src/ShapeMatch/lap.h
+CMakeFiles/run.dir/src/main.cpp.o: ../src/ShapeMatch/shapematch.h
 CMakeFiles/run.dir/src/main.cpp.o: ../src/main.cpp
 CMakeFiles/run.dir/src/main.cpp.o: /usr/local/include/opencv2/calib3d/calib3d.hpp
 CMakeFiles/run.dir/src/main.cpp.o: /usr/local/include/opencv2/contrib/contrib.hpp
