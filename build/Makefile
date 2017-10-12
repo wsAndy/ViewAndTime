@@ -56,17 +56,6 @@ CMAKE_BINARY_DIR = /Users/sheng/Documents/testopencv/ViewAndTime/build
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target edit_cache
-edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
-	/usr/local/Cellar/cmake/3.7.1/bin/ccmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : edit_cache
-
-# Special rule for the target edit_cache
-edit_cache/fast: edit_cache
-
-.PHONY : edit_cache/fast
-
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
@@ -77,6 +66,17 @@ rebuild_cache:
 rebuild_cache/fast: rebuild_cache
 
 .PHONY : rebuild_cache/fast
+
+# Special rule for the target edit_cache
+edit_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
+	/usr/local/Cellar/cmake/3.7.1/bin/ccmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : edit_cache
+
+# Special rule for the target edit_cache
+edit_cache/fast: edit_cache
+
+.PHONY : edit_cache/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -111,19 +111,6 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named SLIC
-
-# Build rule for target.
-SLIC: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 SLIC
-.PHONY : SLIC
-
-# fast build rule for target.
-SLIC/fast:
-	$(MAKE) -f CMakeFiles/SLIC.dir/build.make CMakeFiles/SLIC.dir/build
-.PHONY : SLIC/fast
-
-#=============================================================================
 # Target rules for targets named run
 
 # Build rule for target.
@@ -135,6 +122,19 @@ run: cmake_check_build_system
 run/fast:
 	$(MAKE) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/build
 .PHONY : run/fast
+
+#=============================================================================
+# Target rules for targets named ShapeMatch
+
+# Build rule for target.
+ShapeMatch: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 ShapeMatch
+.PHONY : ShapeMatch
+
+# fast build rule for target.
+ShapeMatch/fast:
+	$(MAKE) -f CMakeFiles/ShapeMatch.dir/build.make CMakeFiles/ShapeMatch.dir/build
+.PHONY : ShapeMatch/fast
 
 #=============================================================================
 # Target rules for targets named test
@@ -161,6 +161,19 @@ AF: cmake_check_build_system
 AF/fast:
 	$(MAKE) -f CMakeFiles/AF.dir/build.make CMakeFiles/AF.dir/build
 .PHONY : AF/fast
+
+#=============================================================================
+# Target rules for targets named SLIC
+
+# Build rule for target.
+SLIC: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 SLIC
+.PHONY : SLIC
+
+# fast build rule for target.
+SLIC/fast:
+	$(MAKE) -f CMakeFiles/SLIC.dir/build.make CMakeFiles/SLIC.dir/build
+.PHONY : SLIC/fast
 
 src/AF/anisometric.o: src/AF/anisometric.cpp.o
 
@@ -215,6 +228,60 @@ src/SLIC/slic.s: src/SLIC/slic.cpp.s
 src/SLIC/slic.cpp.s:
 	$(MAKE) -f CMakeFiles/SLIC.dir/build.make CMakeFiles/SLIC.dir/src/SLIC/slic.cpp.s
 .PHONY : src/SLIC/slic.cpp.s
+
+src/SLIC/slic_tool.o: src/SLIC/slic_tool.cpp.o
+
+.PHONY : src/SLIC/slic_tool.o
+
+# target to build an object file
+src/SLIC/slic_tool.cpp.o:
+	$(MAKE) -f CMakeFiles/SLIC.dir/build.make CMakeFiles/SLIC.dir/src/SLIC/slic_tool.cpp.o
+.PHONY : src/SLIC/slic_tool.cpp.o
+
+src/SLIC/slic_tool.i: src/SLIC/slic_tool.cpp.i
+
+.PHONY : src/SLIC/slic_tool.i
+
+# target to preprocess a source file
+src/SLIC/slic_tool.cpp.i:
+	$(MAKE) -f CMakeFiles/SLIC.dir/build.make CMakeFiles/SLIC.dir/src/SLIC/slic_tool.cpp.i
+.PHONY : src/SLIC/slic_tool.cpp.i
+
+src/SLIC/slic_tool.s: src/SLIC/slic_tool.cpp.s
+
+.PHONY : src/SLIC/slic_tool.s
+
+# target to generate assembly for a file
+src/SLIC/slic_tool.cpp.s:
+	$(MAKE) -f CMakeFiles/SLIC.dir/build.make CMakeFiles/SLIC.dir/src/SLIC/slic_tool.cpp.s
+.PHONY : src/SLIC/slic_tool.cpp.s
+
+src/ShapeMatch/shapematch.o: src/ShapeMatch/shapematch.cpp.o
+
+.PHONY : src/ShapeMatch/shapematch.o
+
+# target to build an object file
+src/ShapeMatch/shapematch.cpp.o:
+	$(MAKE) -f CMakeFiles/ShapeMatch.dir/build.make CMakeFiles/ShapeMatch.dir/src/ShapeMatch/shapematch.cpp.o
+.PHONY : src/ShapeMatch/shapematch.cpp.o
+
+src/ShapeMatch/shapematch.i: src/ShapeMatch/shapematch.cpp.i
+
+.PHONY : src/ShapeMatch/shapematch.i
+
+# target to preprocess a source file
+src/ShapeMatch/shapematch.cpp.i:
+	$(MAKE) -f CMakeFiles/ShapeMatch.dir/build.make CMakeFiles/ShapeMatch.dir/src/ShapeMatch/shapematch.cpp.i
+.PHONY : src/ShapeMatch/shapematch.cpp.i
+
+src/ShapeMatch/shapematch.s: src/ShapeMatch/shapematch.cpp.s
+
+.PHONY : src/ShapeMatch/shapematch.s
+
+# target to generate assembly for a file
+src/ShapeMatch/shapematch.cpp.s:
+	$(MAKE) -f CMakeFiles/ShapeMatch.dir/build.make CMakeFiles/ShapeMatch.dir/src/ShapeMatch/shapematch.cpp.s
+.PHONY : src/ShapeMatch/shapematch.cpp.s
 
 src/main.o: src/main.cpp.o
 
@@ -276,18 +343,25 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
-	@echo "... SLIC"
-	@echo "... edit_cache"
 	@echo "... run"
+	@echo "... ShapeMatch"
 	@echo "... test"
 	@echo "... rebuild_cache"
 	@echo "... AF"
+	@echo "... edit_cache"
+	@echo "... SLIC"
 	@echo "... src/AF/anisometric.o"
 	@echo "... src/AF/anisometric.i"
 	@echo "... src/AF/anisometric.s"
 	@echo "... src/SLIC/slic.o"
 	@echo "... src/SLIC/slic.i"
 	@echo "... src/SLIC/slic.s"
+	@echo "... src/SLIC/slic_tool.o"
+	@echo "... src/SLIC/slic_tool.i"
+	@echo "... src/SLIC/slic_tool.s"
+	@echo "... src/ShapeMatch/shapematch.o"
+	@echo "... src/ShapeMatch/shapematch.i"
+	@echo "... src/ShapeMatch/shapematch.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

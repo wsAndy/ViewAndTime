@@ -30,19 +30,47 @@ float.h
 vector
 ../include/SLIC/vector
 
-/Users/sheng/Documents/testopencv/ViewAndTime/src/ShapeMatch/lap.h
+../include/SLIC/slic_tool.h
+iostream
+-
+vector
+../include/SLIC/vector
+stdio.h
+../include/SLIC/stdio.h
+opencv2/opencv.hpp
+../include/SLIC/opencv2/opencv.hpp
+opencv2/features2d/features2d.hpp
+../include/SLIC/opencv2/features2d/features2d.hpp
+opencv2/legacy/legacy.hpp
+../include/SLIC/opencv2/legacy/legacy.hpp
+opencv2/highgui/highgui.hpp
+../include/SLIC/opencv2/highgui/highgui.hpp
+opencv2/nonfree/nonfree.hpp
+../include/SLIC/opencv2/nonfree/nonfree.hpp
+opencv2/nonfree/features2d.hpp
+../include/SLIC/opencv2/nonfree/features2d.hpp
+string
+../include/SLIC/string
+set
+../include/SLIC/set
+map
+../include/SLIC/map
+
+../include/ShapeMatch/lap.h
 stdio.h
 -
 vector
 -
 
-/Users/sheng/Documents/testopencv/ViewAndTime/src/ShapeMatch/shapematch.h
+../include/ShapeMatch/shapematch.h
 opencv2/highgui/highgui.hpp
 -
 opencv2/imgproc/imgproc.hpp
 -
 opencv2/features2d/features2d.hpp
-/Users/sheng/Documents/testopencv/ViewAndTime/src/ShapeMatch/opencv2/features2d/features2d.hpp
+../include/ShapeMatch/opencv2/features2d/features2d.hpp
+opencv2/calib3d/calib3d.hpp
+../include/ShapeMatch/opencv2/calib3d/calib3d.hpp
 iostream
 -
 fstream
@@ -62,7 +90,7 @@ sys/time.h
 math.h
 -
 lap.h
-/Users/sheng/Documents/testopencv/ViewAndTime/src/ShapeMatch/lap.h
+../include/ShapeMatch/lap.h
 
 /Users/sheng/Documents/testopencv/ViewAndTime/src/main.cpp
 iostream
@@ -87,10 +115,12 @@ set
 /Users/sheng/Documents/testopencv/ViewAndTime/src/set
 map
 /Users/sheng/Documents/testopencv/ViewAndTime/src/map
-SLIC/slic.h
-/Users/sheng/Documents/testopencv/ViewAndTime/src/SLIC/slic.h
 AF/anisometric.hpp
 /Users/sheng/Documents/testopencv/ViewAndTime/src/AF/anisometric.hpp
+SLIC/slic_tool.h
+/Users/sheng/Documents/testopencv/ViewAndTime/src/SLIC/slic_tool.h
+SLIC/slic.h
+/Users/sheng/Documents/testopencv/ViewAndTime/src/SLIC/slic.h
 ShapeMatch/shapematch.h
 /Users/sheng/Documents/testopencv/ViewAndTime/src/ShapeMatch/shapematch.h
 

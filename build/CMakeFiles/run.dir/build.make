@@ -92,6 +92,7 @@ run_EXTERNAL_OBJECTS =
 ../run: CMakeFiles/run.dir/build.make
 ../run: ../lib/libSLIC.dylib
 ../run: ../lib/libAF.dylib
+../run: ../lib/libShapeMatch.dylib
 ../run: /usr/local/lib/libopencv_videostab.2.4.13.dylib
 ../run: /usr/local/lib/libopencv_ts.a
 ../run: /usr/local/lib/libopencv_superres.2.4.13.dylib

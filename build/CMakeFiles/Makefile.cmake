@@ -52,8 +52,9 @@ set(CMAKE_MAKEFILE_PRODUCTS
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
-  "CMakeFiles/SLIC.dir/DependInfo.cmake"
   "CMakeFiles/run.dir/DependInfo.cmake"
+  "CMakeFiles/ShapeMatch.dir/DependInfo.cmake"
   "CMakeFiles/test.dir/DependInfo.cmake"
   "CMakeFiles/AF.dir/DependInfo.cmake"
+  "CMakeFiles/SLIC.dir/DependInfo.cmake"
   )

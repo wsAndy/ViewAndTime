@@ -1,33 +1,7 @@
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include "opencv2/features2d/features2d.hpp"
+#include "ShapeMatch/shapematch.h"
 
+//using namespace shapematch;
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <map>
-
-#include <stdlib.h>
-#include <time.h>
-#include <sys/time.h>
-
-#include <math.h>
-
-#include "lap.h"
-
-using namespace std;
-using namespace cv;
-
-#define OUTLIER_THRESHOLD 1.2
-
-const Scalar RED = Scalar(0,0,255);
-const Scalar PINK = Scalar(230,130,255);
-const Scalar BLUE = Scalar(255,0,0);
-const Scalar LIGHTBLUE = Scalar(255,255,160);
-const Scalar GREEN = Scalar(0,255,0);
-const Scalar WHITE = Scalar(255, 255, 255);
 
 double dist(Point2f& p1, Point2f& p2)
 {
@@ -496,3 +470,73 @@ void getMatchShape(Mat& img1_,  vector<Point2f>& contourPts1, Mat& img2_,  vecto
 
 
 }
+
+
+void displayShapeMatchImg(Mat& img1_col, vector<Point2f>& mat_point1, Mat &img2_col, vector<Point2f>& mat_point2)
+{
+
+    pair<Point2f,Point2f> mm = getMinMax(mat_point1, mat_point2);
+    int sizex = mm.second.x + (int) ((mm.second.x - mm.first.x) * 0.1);
+    int sizey = mm.second.y + (int) ((mm.second.y - mm.first.y) * 0.1);
+
+    displayMergeImage(img1_col,mat_point1,img2_col,mat_point2);
+
+    Mat shsh = Mat::zeros(sizey,sizex,CV_8UC3);
+
+    for(int i = 0; i < mat_point1.size(); ++i)
+    {
+        circle(shsh,mat_point1[i],1,Scalar(0,0,255));
+        circle(shsh,mat_point2[i],1,Scalar(255,0,0));
+        line(shsh,mat_point1[i],mat_point2[i],Scalar(255,255,255));
+    }
+
+    imshow("shsh",shsh);
+    waitKey(0);
+
+
+}
+
+
+
+void displayMergeImage(Mat & img1_col, vector<  cv::Point2f > &mat_point1, Mat & img2_col, vector<  cv::Point2f > &mat_point2 )
+{
+    Mat match_img;
+
+    addTwoImageToOne(img1_col,img2_col,match_img);
+
+    for(int i =0 ;i < mat_point1.size(); ++i)
+    {
+        circle(match_img,mat_point1[i],3,Scalar(255,0,0),1,8);
+        circle(match_img,Point2f(mat_point2[i].x + match_img.cols/2,mat_point2[i].y),3,Scalar(0,0,255),3,8);
+        line(match_img,mat_point1[i],Point2f(mat_point2[i].x + match_img.cols/2,mat_point2[i].y),Scalar(0,255,0),1,8);
+    }
+
+    imshow("mat",match_img);
+//    imwrite("/home/arvr/Desktop/match.jpg",match_img);
+    waitKey(0);
+
+}
+
+
+void addTwoImageToOne(Mat &img1_col,Mat &img2_col,Mat &match_img)
+{
+     match_img = Mat::zeros(img1_col.rows,img1_col.cols + img2_col.cols,CV_8UC3);
+     for(int i = 0; i < match_img.rows; ++i)
+     {
+         for(int j = 0; j < match_img.cols/2; ++j)
+         {
+             match_img.at<Vec3b>(i,j)[0] = img1_col.at<Vec3b>(i,j)[0];
+             match_img.at<Vec3b>(i,j)[1] = img1_col.at<Vec3b>(i,j)[1];
+             match_img.at<Vec3b>(i,j)[2] = img1_col.at<Vec3b>(i,j)[2];
+         }
+
+         for(int j = match_img.cols/2 ; j < match_img.cols; ++j)
+         {
+             match_img.at<Vec3b>(i,j)[0] = img2_col.at<Vec3b>(i,j-match_img.cols/2)[0];
+             match_img.at<Vec3b>(i,j)[1] = img2_col.at<Vec3b>(i,j-match_img.cols/2)[1];
+             match_img.at<Vec3b>(i,j)[2] = img2_col.at<Vec3b>(i,j-match_img.cols/2)[2];
+         }
+     }
+
+}
+

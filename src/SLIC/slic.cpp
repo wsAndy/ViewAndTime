@@ -1,5 +1,7 @@
 #include "SLIC/slic.h"
 
+//using namespace superpixel;
+
 //using namespace slic;
 
 /*

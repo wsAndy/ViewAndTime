@@ -35,9 +35,18 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 add_library( SLIC SHARED
 
 src/SLIC/slic.cpp
+src/SLIC/slic_tool.cpp
 )
 
 target_link_libraries(SLIC
+    ${OpenCV_LIBS}
+)
+
+add_library( ShapeMatch SHARED
+    src/ShapeMatch/shapematch.cpp
+#    src/ShapeMatch/shape_tool.cpp
+)
+target_link_libraries(ShapeMatch
     ${OpenCV_LIBS}
 )
 
@@ -49,23 +58,11 @@ target_link_libraries(AF
     ${OpenCV_LIBS}
 )
 
-# here you cannot add shape_match now
-# donnot need it since shape match could be solved by auction algorithm
-# you just need to calculate the cost Matrix
-#add_library( ShapeMatch SHARED
-
-#    src/ShapeMatch/shapematch.h
-#    src/ShapeMatch/lap.h
-# )
-#target_link_libraries(ShapeMatch
-#    ${OpenCV_LIBS}
-#)
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/)
 
 
-add_executable(run src/main.cpp  src/ShapeMatch/shapematch.h  src/ShapeMatch/lap.h)
-target_link_libraries(run SLIC AF)
+add_executable(run src/main.cpp )
+target_link_libraries(run SLIC AF ShapeMatch)
 
 
 add_executable(test src/test.cpp)

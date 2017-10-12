@@ -25,6 +25,7 @@ set(CMAKE_CXX_TARGET_INCLUDE_PATH
 set(CMAKE_TARGET_LINKED_INFO_FILES
   "/Users/sheng/Documents/testopencv/ViewAndTime/build/CMakeFiles/SLIC.dir/DependInfo.cmake"
   "/Users/sheng/Documents/testopencv/ViewAndTime/build/CMakeFiles/AF.dir/DependInfo.cmake"
+  "/Users/sheng/Documents/testopencv/ViewAndTime/build/CMakeFiles/ShapeMatch.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.
