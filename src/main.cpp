@@ -77,8 +77,8 @@ bool judgeHomoDistance( Mat& H,vector<cv::Point2f>& obj,vector<cv::Point2f>& sce
 void iteratorGetHomo(vec2di& , std::vector<cv::Mat>&, std::map<int,int>&, std::vector<cv::Point2f>&, std::vector<cv::Point2f>&, int& );
 
 
-#define FEATURE_NUMBER_REGION 5
-#define ITERATOR_TIMES_FOR_HOMO 10
+#define FEATURE_NUMBER_REGION 40
+#define ITERATOR_TIMES_FOR_HOMO 30
 
 
 
@@ -89,11 +89,17 @@ int main()
     Mat img1_col = imread( path + "cam0/color-cam0-f000.jpg");
     Mat img2_col = imread( path + "cam2/color-cam2-f000.jpg");
 
-    resize(img1_col,img1_col,cv::Size(int(img1_col.cols/2),int(img1_col.rows/2)));
-    resize(img2_col,img2_col,cv::Size(int(img2_col.cols/2),int(img2_col.rows/2)));
+//    resize(img1_col,img1_col,cv::Size(int(img1_col.cols/2),int(img1_col.rows/2)));
+//    resize(img2_col,img2_col,cv::Size(int(img2_col.cols/2),int(img2_col.rows/2)));
 
     vector<  cv::Point2f > mat_point1, mat_point2;
-    getMatchShape(img1_col,mat_point1,img2_col,mat_point2);
+
+/***
+ *    使用边缘进行匹配
+ *    实验发现效果还不如直接用特征点....
+ *    一定有什么 trick
+ */
+//    getMatchShape(img1_col,mat_point1,img2_col,mat_point2);
 
 /***
  *
@@ -109,8 +115,8 @@ int main()
  *
  *
  */
-//    matchTwoImageSURF(img1_col,img2_col, mat_point1, mat_point2);
-//    matchTwoImageORB(img1_col,img2_col, mat_point1, mat_point2);
+    matchTwoImageSURF(img1_col,img2_col, mat_point1, mat_point2);
+    matchTwoImageORB(img1_col,img2_col, mat_point1, mat_point2);
 
 //    cout << "feature1 size = " << mat_point1.size() <<endl;
 
@@ -135,13 +141,11 @@ int main()
 
     cout << "mat point1 = " << mat_point1.size() <<endl;
     cout << "mat point2 = " << mat_point2.size() <<endl;
+
     Mat derformMat1 = getCorresponseMaps(cluster1, mat_point1, mat_point2);
 //    Mat derformMat2 = getCorresponseMaps(cluster2, mat_point2, mat_point1);
 
-/// a test
-    cout << "start to warp" <<endl;
     warp(img1_col,derformMat1);
-
 //    warp(img1_col, derformMat1, img2_col,derformMat2,10);
 
     // AF, but how AF change the result ???
@@ -255,6 +259,7 @@ void warp( Mat& img1_col, Mat& derformMat)
         {
             for(int j = 0; j < img1_col.cols; ++j)
             {
+                // derformMat这边存储的是位置的偏移，所以在逻辑上也不成问题
                 int x =  i + int(derformMat.at<Vec3d>(i,j)[0] * ind *0.1); // row
                 int y =  j + int(derformMat.at<Vec3d>(i,j)[1] * ind *0.1); // col
 
@@ -517,6 +522,9 @@ Mat getCorresponseMaps(vec2di& cluster,vector<  cv::Point2f >& mat_point1,vector
     vector< cv::Mat> Homo;
     std::map<int,int> homo_link;
     int counter_gethomo = 0;
+
+//    cout << "TEST, iteratorGetHomo!!! add this line if run the whole program " <<endl;
+////    TEST !!!!
     iteratorGetHomo(cluster,Homo,homo_link, mat_point1, mat_point2, counter_gethomo);
 
     cerr << " /// if update Homography again, then merge regions without Homography" <<endl
@@ -533,37 +541,38 @@ Mat getCorresponseMaps(vec2di& cluster,vector<  cv::Point2f >& mat_point1,vector
 
     Mat derformMat(cluster[0].size(), cluster.size(), CV_64FC3, Scalar(0,0,0));
 
-    Mat xSrcTrans = Mat(1,1,CV_64FC3,Scalar(0,0,0));
+//    Mat xSrcTrans = Mat(1,1,CV_64FC3,Scalar(0,0,0));
 
+    // TEST!!!!!
+//    Mat H = findHomography(mat_point1, mat_point2, CV_RANSAC);
+// 下面应用Homography的代码应该是有问题的
 
     double max_r = 0, max_g = 0;
 
-    for(int i = 0; i < cluster.size(); ++i)
+    for(int i = 0; i < cluster.size(); ++i) // col  -----
     {
-        for(int j = 0; j < cluster[0].size(); ++j)
-        {
-            double temp[3][1] = { (double)j,(double)i,1 };
-            Mat xSrc = Mat(3,1,CV_64FC1,temp);
+        for(int j = 0; j < cluster[0].size(); ++j) // row |
+        {   
             Mat temp_h;
             temp_h = Homo[homo_link[cluster[i][j]]]; // should ensure each pixel maps to an Homography Mat
-            xSrc = temp_h*xSrc - xSrc;
 
-            xSrcTrans.at<Vec3d>(0,0)[0] = xSrc.at<Vec3d>(0,0)[0];
-            xSrcTrans.at<Vec3d>(0,0)[1] = xSrc.at<Vec3d>(1,0)[0];
-            xSrcTrans.at<Vec3d>(0,0)[2] = xSrc.at<Vec3d>(2,0)[0];
+            vector<Point2f> pix,target_pix;
+            pix.push_back(Point2f(i,j));
 
-            derformMat.at<Vec3d>(j,i)[0] = ((xSrcTrans.at<Vec3d>(0,0)[0]) );
-            derformMat.at<Vec3d>(j,i)[1] = ((xSrcTrans.at<Vec3d>(0,0)[1]) );
-            derformMat.at<Vec3d>(j,i)[2] = ((xSrcTrans.at<Vec3d>(0,0)[2]) );
+            perspectiveTransform(pix,target_pix,temp_h);
 
-            if(max_r < (abs(xSrcTrans.at<Vec3d>(0,0)[0]) ))
+            derformMat.at<Vec3d>(j,i)[0] = (target_pix[0].x - i); // col
+            derformMat.at<Vec3d>(j,i)[1] = (target_pix[0].y - j); // row
+            derformMat.at<Vec3d>(j,i)[2] = 1;
+
+            if(max_r < (abs(target_pix[0].x - i) ))
             {
-                max_r = (abs(xSrcTrans.at<Vec3d>(0,0)[0]) );
+                max_r = (abs(target_pix[0].x - i) );
             }
 
-            if(max_g < (abs(xSrcTrans.at<Vec3d>(0,0)[1]) ))
+            if(max_g < (abs(target_pix[0].y - j) ))
             {
-                max_g = (abs(xSrcTrans.at<Vec3d>(0,0)[1]) );
+                max_g = (abs(target_pix[0].y - j) );
             }
         }
     }
@@ -987,9 +996,9 @@ vec2di getSuperPixels(Mat& img1_col)
     lab_img1 = &lab1;
 
     int w = img1_col.cols, h = img1_col.rows;
-    int nr_superpixels = 300;   // 300 is a trick， bigger nr_superpixel
+    int nr_superpixels = 150;   // 300 is a trick， bigger nr_superpixel
 
-    int nc = 150;                // 150 is a trick, bigger nc lead to
+    int nc = 100;                // 150 is a trick, bigger nc lead to
 
     double step = sqrt((w*h)/(double)(nr_superpixels)  );
 
