@@ -1,3 +1,14 @@
+
+/****
+ *
+ *
+ *
+ *   writed by sheng wang
+ *   2017-9-15
+ *
+ */
+
+
 #include "SLIC/slic_tool.h"
 #include "SLIC/slic.h"
 
@@ -147,6 +158,183 @@ void warp( Mat& img1_col, Mat& derformMat)
 
     }
 
+}
+
+set<int> getClusterID(vector<vector<int> > & cluster)
+{
+    set<int > id;
+    for(int i = 0; i < cluster.size(); ++i)
+    {// cols
+        for(int j = 0; j < cluster[0].size(); +j)
+        {//rows
+            id.insert(cluster[i][j]);
+        }
+    }
+    return id;
+}
+
+vector<int> findNotenoughFeatureID(vector<vector<int> > & cluster, vector<Point2f> & mat_point)
+{
+    return findNofeatureId(mat_point,cluster);
+}
+
+
+void findNearestIdAndUpdateCluster(vector<vector<int> > & cluster, vec2dd& dist_table,vector<Point3f>& center, vector<int>& id_no)
+{
+    map<int, int> link;
+
+    for(int i = 0; i < id_no.size(); ++i)
+    {
+        int target_id = findNearestId(dist_table,id_no[i]);
+        if(target_id == -1)
+        {
+            cerr << "ERROR: not find nearest id in findNearestIdAndUpdateCluster" << endl;
+        }
+        link[ id_no[i] ] = target_id;
+    }
+
+    for(int i = 0 ; i < cluster.size(); ++i)
+    {
+        for(int j = 0; j < cluster[i].size(); ++j)
+        {
+            if(std::find(id_no.begin(), id_no.end(),cluster[i][j])!=id_no.end())
+            {
+                cluster[i][j] = link[ cluster[i][j] ];
+            }
+        }
+    }
+
+    // cluster has been update
+    // then update dist_table and center
+
+    // update center
+    std::vector<cv::Point3f> center_new = getCenterFromCluster(cluster);
+    vec2dd dist_table_new = createDistMat(center_new);
+
+    // now all the superpixels has enough features and just create a new dist_table
+    dist_table.clear();
+
+    for(int i = 0; i < dist_table_new.size(); ++i)
+    {
+        dist_table.push_back(dist_table_new[i]);
+    }
+
+    center.clear();
+
+    for(int i = 0; i < center_new.size(); ++i)
+    {
+
+        center.push_back(center_new[i]);
+
+    }
+
+}
+
+void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_point2, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, vec2dd& dist_table,vector<Point3f>& center ,int count)
+{
+    count ++;
+    vector< set<int> > region_featureID;
+    std::vector<int> merge_again_id;
+
+    displayCenterWithCluster(center,cluster);
+
+    for(int i = 0; i < findmaxclu(cluster); ++i)
+    {
+        set<int> tmp;
+
+        tmp.insert(-1);
+        region_featureID.push_back(tmp);
+    }
+    for(int i = 0; i < mat_point1.size(); ++i)
+    {
+        int id = cluster[int(mat_point1[i].x)][int(mat_point1[i].y)];
+        region_featureID[id].insert(i); // means id-th superpixel save feature i-th feature
+    }
+
+    cout << "region_featureID.size() = " << region_featureID.size() <<endl;
+    for(int i = 0; i < region_featureID.size(); ++i)
+    {
+        if(region_featureID[i].size() == 1)    continue;
+
+        std::vector<cv::Point2f> obj;
+        std::vector<cv::Point2f> scene;
+        for(std::set<int>::iterator j = region_featureID[i].begin();
+            j!=region_featureID[i].end(); ++j)
+        {
+            if(*j != -1)
+            {
+                obj.push_back(mat_point1[*j]);
+                scene.push_back(mat_point2[*j]);
+            }
+        }
+
+        if ( iteHomo(obj,scene,Homo,homo_link,i) )
+        {
+            // get homography with enough feature
+            ;
+        }
+        else{
+            // need to merge again
+            cout << "SUPERPIXLE ID: " << i << "   need to merge again."<< endl;
+            merge_again_id.push_back(i); // i is cluster ID
+        }
+    }
+
+    if(merge_again_id.size() > 0 && count <= ITERATOR_TIMES_FOR_HOMO )
+    {
+        cout << "merge again " <<endl;
+        findNearestIdAndUpdateCluster(cluster, dist_table, center,merge_again_id);
+
+        calHomo(cluster,mat_point1,mat_point2,Homo,homo_link, dist_table,center, count);
+    }
+
+
+
+}
+
+bool iteHomo(vector<Point2f>& obj, vector<Point2f>& scene, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, int i)
+{
+    if(!obj.empty() && obj.size() >= HOMO_MIN_NUM && scene.size() >= HOMO_MIN_NUM)
+    {
+        Mat H = findHomography(obj,scene,CV_RANSAC);
+
+        if(judgeHomoDistance(H,obj,scene))
+        {
+            Homo.push_back(H);
+            homo_link[i] = Homo.size() - 1;
+            return true;
+        }
+        else{
+            // iterate
+            iteHomo(obj,scene, Homo,homo_link,i);
+        }
+    }else{
+        // not have enough feature
+        return false;
+    }
+}
+
+
+void getSuperpixelHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, std::vector<cv::Point2f>& mat_point1, std::vector<cv::Point2f>& mat_point2, int& count)
+{
+    count = 0;
+
+
+//    set<int> id = getClusterID(cluster);
+    vector<cv::Point3f> center = getCenterFromCluster(cluster);
+
+    vector<int> id_NotEnough = findNotenoughFeatureID(cluster,mat_point1);
+
+    vec2dd dist_table = createDistMat(center);
+    updateDistMat(dist_table,id_NotEnough);
+
+    /// cluster , dist_table and center all has been changed
+    /// id_NotEnough is useless now
+    /// dince the whole cluster has enough feature.
+    findNearestIdAndUpdateCluster(cluster, dist_table, center, id_NotEnough);
+
+    cout << "into calHomo" <<endl;
+    calHomo(cluster,mat_point1,mat_point2,Homo,homo_link, dist_table, center, count);
 }
 
 void iteratorGetHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, std::vector<cv::Point2f>& mat_point1, std::vector<cv::Point2f>& mat_point2, int& count)
@@ -357,12 +545,14 @@ Mat getCorresponseMaps(vec2di& cluster,vector<  cv::Point2f >& mat_point1,vector
     std::map<int,int> homo_link;
     int counter_gethomo = 0;
 
-    cout << "TEST, iteratorGetHomo!!! add this line if run the whole program " <<endl;
 ////    TEST !!!!
+///
+///
+
+    getSuperpixelHomo(cluster,Homo,homo_link, mat_point1, mat_point2, counter_gethomo);
+
 //    iteratorGetHomo(cluster,Homo,homo_link, mat_point1, mat_point2, counter_gethomo);
 
-    cerr << " /// if update Homography again, then merge regions without Homography" <<endl
-         << "/// and update Homography again." << endl;
 
     cerr << "Incorrect Homographies lead to wrong results." <<endl;
     cout << "Homography size = " << Homo.size() << endl;
@@ -375,11 +565,8 @@ Mat getCorresponseMaps(vec2di& cluster,vector<  cv::Point2f >& mat_point1,vector
 
     Mat derformMat(cluster[0].size(), cluster.size(), CV_64FC3, Scalar(0,0,0));
 
-//    Mat xSrcTrans = Mat(1,1,CV_64FC3,Scalar(0,0,0));
 
-    // TEST!!!!!
-    Mat H = findHomography(mat_point1, mat_point2, CV_RANSAC);
-// 下面应用Homography的代码应该是有问题的
+//    Mat H = findHomography(mat_point1, mat_point2, CV_RANSAC);
 
     double max_r = 0, max_g = 0;
 
@@ -388,8 +575,8 @@ Mat getCorresponseMaps(vec2di& cluster,vector<  cv::Point2f >& mat_point1,vector
         for(int j = 0; j < cluster[0].size(); ++j) // row |
         {
             Mat temp_h;
-            temp_h = H;
-//            temp_h = Homo[homo_link[cluster[i][j]]]; // should ensure each pixel maps to an Homography Mat
+//            temp_h = H;
+            temp_h = Homo[homo_link[cluster[i][j]]]; // should ensure each pixel maps to an Homography Mat
 
             vector<Point2f> pix,target_pix;
             pix.push_back(Point2f(i,j));
@@ -668,6 +855,10 @@ vec2dd createDistMat(vector<cv::Point3f> & center)
                 {
                     dist_ab.push_back(-1); // beside itself
                 }else{
+                  if(abs(center[i].z) < 1e-4 || abs(center[j].z) < 1e-4)
+                  {
+                    dist_ab.push_back(-1);
+                  }
                     dist_ab.push_back(distance(center[i],center[j]));
                 }
             }
@@ -772,6 +963,7 @@ void displayCenterWithCluster(vector< cv::Point3f > &center, vec2di & cluster)
             putText(sin,str,Point2f(center[i].x, center[i].y),FONT_HERSHEY_COMPLEX,0.4,cv::Scalar(0, 0, 0),1,8,0);
         }
     }
+//    imwrite("/Users/sheng/Desktop/superpixel_center.jpg",sin);
     imshow("sin",sin);
     waitKey(0);
 }

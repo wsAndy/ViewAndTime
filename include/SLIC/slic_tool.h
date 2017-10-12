@@ -24,7 +24,8 @@ using namespace cv;
 #define vec2di vector< vector<int> >
 #define vec2db vector< vector<bool> >
 
-#define FEATURE_NUMBER_REGION 40
+#define FEATURE_NUMBER_REGION 10
+#define HOMO_MIN_NUM  10
 #define ITERATOR_TIMES_FOR_HOMO 30
 
 //namespace slic_tool{
@@ -89,8 +90,18 @@ bool judgeHomoDistance( Mat& H,vector<cv::Point2f>& obj,vector<cv::Point2f>& sce
 void iteratorGetHomo(vec2di& , std::vector<cv::Mat>&, std::map<int,int>&, std::vector<cv::Point2f>&, std::vector<cv::Point2f>&, int& );
 
 
-//}
 
+/// new function
+void getSuperpixelHomo(vec2di& , std::vector<cv::Mat>&, std::map<int,int>&, std::vector<cv::Point2f>&, std::vector<cv::Point2f>&, int& );
 
+set<int> getClusterID(vec2di&);
+
+vector<int> findNotenoughFeatureID(vec2di&, vector<Point2f>&);
+
+void findNearestIdAndUpdateCluster(vec2di& cluster, vec2dd& dist_table, vector<cv::Point3f>& center,vector<int>& id_not_enough);
+
+void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_point2, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, vec2dd& dist_table, vector<Point3f>& center, int count);
+
+bool iteHomo(vector<Point2f>& obj, vector<Point2f>& scene, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, int i);
 
 #endif

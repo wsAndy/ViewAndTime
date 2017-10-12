@@ -8,24 +8,11 @@
  *
  */
 
-#include <iostream>
-#include "stdio.h"
-#include "opencv2/opencv.hpp"
-#include "opencv2/features2d/features2d.hpp"
-#include "opencv2/legacy/legacy.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/nonfree/nonfree.hpp"
-#include "opencv2/nonfree/features2d.hpp"
-#include "string"
-#include "set"
-#include "map"
 #include "AF/anisometric.hpp"
 #include "SLIC/slic_tool.h"
 #include "SLIC/slic.h"
 #include "ShapeMatch/shapematch.h"
 
-//using namespace superpixel;
-//using namespace slic_tool;
 using namespace std;
 using namespace  cv;
 

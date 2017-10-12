@@ -28,6 +28,5 @@
 *.app
 
 # self file
-*.log
 
 build/*

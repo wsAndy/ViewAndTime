@@ -63,9 +63,9 @@ CMAKE_BINARY_DIR = /Users/sheng/Documents/testopencv/ViewAndTime/build
 # Target rules for target CMakeFiles/run.dir
 
 # All Build rule for target.
-CMakeFiles/run.dir/all: CMakeFiles/ShapeMatch.dir/all
 CMakeFiles/run.dir/all: CMakeFiles/AF.dir/all
 CMakeFiles/run.dir/all: CMakeFiles/SLIC.dir/all
+CMakeFiles/run.dir/all: CMakeFiles/ShapeMatch.dir/all
 	$(MAKE) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/depend
 	$(MAKE) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/sheng/Documents/testopencv/ViewAndTime/build/CMakeFiles --progress-num=8,9 "Built target run"
