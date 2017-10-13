@@ -179,17 +179,22 @@ vector<int> findNotenoughFeatureID(vector<vector<int> > & cluster, vector<Point2
 }
 
 
-void findNearestIdAndUpdateCluster(vector<vector<int> > & cluster, vec2dd& dist_table,vector<Point3f>& center, vector<int>& id_no)
+void findNearestIdAndUpdateCluster(vector<vector<int> > & cluster,
+                                   vec2dd& dist_table,
+                                   vector<Point3f>& center,
+                                   vector<int>& id_no)
 {
     map<int, int> link;
 
     for(int i = 0; i < id_no.size(); ++i)
     {
+
         int target_id = findNearestId(dist_table,id_no[i]);
         if(target_id == -1)
         {
             cerr << "ERROR: not find nearest id in findNearestIdAndUpdateCluster" << endl;
         }
+//        cout <<id_no[i] << " --> " << target_id << endl;
         link[ id_no[i] ] = target_id;
     }
 
@@ -209,6 +214,9 @@ void findNearestIdAndUpdateCluster(vector<vector<int> > & cluster, vec2dd& dist_
 
     // update center
     std::vector<cv::Point3f> center_new = getCenterFromCluster(cluster);
+
+    int mmax = findmaxclu(cluster);
+
     vec2dd dist_table_new = createDistMat(center_new);
 
     // now all the superpixels has enough features and just create a new dist_table
@@ -233,6 +241,9 @@ void findNearestIdAndUpdateCluster(vector<vector<int> > & cluster, vec2dd& dist_
 void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_point2, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, vec2dd& dist_table,vector<Point3f>& center ,int count)
 {
     count ++;
+    Homo.clear();
+    homo_link.clear();
+
     vector< set<int> > region_featureID;
     std::vector<int> merge_again_id;
 
@@ -306,6 +317,7 @@ bool iteHomo(vector<Point2f>& obj, vector<Point2f>& scene, std::vector<cv::Mat>&
         }
         else{
             // iterate
+            // update obj and scene first???
             iteHomo(obj,scene, Homo,homo_link,i);
         }
     }else{
@@ -315,15 +327,21 @@ bool iteHomo(vector<Point2f>& obj, vector<Point2f>& scene, std::vector<cv::Mat>&
 }
 
 
-void getSuperpixelHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, std::vector<cv::Point2f>& mat_point1, std::vector<cv::Point2f>& mat_point2, int& count)
+void getSuperpixelHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link,
+                       std::vector<cv::Point2f>& mat_point1, std::vector<cv::Point2f>& mat_point2, int& count)
 {
     count = 0;
-
 
 //    set<int> id = getClusterID(cluster);
     vector<cv::Point3f> center = getCenterFromCluster(cluster);
 
     vector<int> id_NotEnough = findNotenoughFeatureID(cluster,mat_point1);
+
+    for(int i = 0; i < id_NotEnough.size() ; ++i)
+    {
+        cout << id_NotEnough[i] << "   ";
+    }
+    cout << endl;
 
     vec2dd dist_table = createDistMat(center);
     updateDistMat(dist_table,id_NotEnough);
@@ -682,6 +700,7 @@ vector<int> findNofeatureId(vector<  cv::Point2f >& mat_point1,vec2di& cluster)
 {
     vector<int> vec_count_cluster;
     int max_clu = findmaxclu(cluster);
+    cout << "findNofeatureId: cluster size = " << max_clu << endl;
 
     for(int i = 0; i < max_clu; ++i)
     {
@@ -800,8 +819,13 @@ int findNearestId(vec2dd& dist, int& id)
     int min = 1000000;
     int targ_id = -1;
 
+    cout << "dist[id].size = " << dist[id].size() << endl;
+    cout << "dist.size = " << dist.size() << endl;
+
     for(int i = 0; i < dist[id].size(); ++i )
     {// column
+
+
         if(dist[id][i] > 0 && min > dist[id][i])
         {
             min = dist[id][i];
@@ -826,7 +850,6 @@ int findNearestId(vec2dd& dist, int& id)
 
 void updateDistMat(vec2dd & dist_mat, vector<int>& id)
 {
-
     for(int i = 0 ; i < id.size()-1; ++i)
     {
         for(int j = i+1; j < id.size(); ++j)
@@ -849,7 +872,7 @@ vec2dd createDistMat(vector<cv::Point3f> & center)
         for(int i = 0; i < center.size();++i)
         {
             vector<double> dist_ab;
-            for(int j = 0; j <=i ; ++j)
+            for(int j = 0; j <= i ; ++j)
             {
                 if(j == i)
                 {
@@ -858,8 +881,9 @@ vec2dd createDistMat(vector<cv::Point3f> & center)
                   if(abs(center[i].z) < 1e-4 || abs(center[j].z) < 1e-4)
                   {
                     dist_ab.push_back(-1);
-                  }
+                  }else{ // fix bugs....
                     dist_ab.push_back(distance(center[i],center[j]));
+                  }
                 }
             }
             dist_mat.push_back(dist_ab);
