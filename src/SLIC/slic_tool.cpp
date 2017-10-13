@@ -215,7 +215,7 @@ void findNearestIdAndUpdateCluster(vector<vector<int> > & cluster,
     // update center
     std::vector<cv::Point3f> center_new = getCenterFromCluster(cluster);
 
-    int mmax = findmaxclu(cluster);
+//    int mmax = findmaxclu(cluster);
 
     vec2dd dist_table_new = createDistMat(center_new);
 
@@ -231,9 +231,7 @@ void findNearestIdAndUpdateCluster(vector<vector<int> > & cluster,
 
     for(int i = 0; i < center_new.size(); ++i)
     {
-
         center.push_back(center_new[i]);
-
     }
 
 }
@@ -247,7 +245,7 @@ void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_
     vector< set<int> > region_featureID;
     std::vector<int> merge_again_id;
 
-    displayCenterWithCluster(center,cluster);
+//    displayCenterWithCluster(center,cluster);
 
     for(int i = 0; i < findmaxclu(cluster); ++i)
     {
@@ -278,6 +276,7 @@ void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_
                 scene.push_back(mat_point2[*j]);
             }
         }
+        // 此时的 obj scene是当前第i个超像素区域的特征id
 
         if ( iteHomo(obj,scene,Homo,homo_link,i) )
         {
@@ -296,6 +295,7 @@ void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_
         cout << "merge again " <<endl;
         findNearestIdAndUpdateCluster(cluster, dist_table, center,merge_again_id);
 
+        cout << "merge again cluster size = " << findmaxclu(cluster) << endl;
         calHomo(cluster,mat_point1,mat_point2,Homo,homo_link, dist_table,center, count);
     }
 
@@ -303,7 +303,9 @@ void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_
 
 }
 
-bool iteHomo(vector<Point2f>& obj, vector<Point2f>& scene, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, int i)
+bool iteHomo(vector<Point2f>& obj, vector<Point2f>& scene,
+             std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link,
+             int i)
 {
     if(!obj.empty() && obj.size() >= HOMO_MIN_NUM && scene.size() >= HOMO_MIN_NUM)
     {
@@ -317,7 +319,7 @@ bool iteHomo(vector<Point2f>& obj, vector<Point2f>& scene, std::vector<cv::Mat>&
         }
         else{
             // iterate
-            // update obj and scene first???
+            // obj and scene has been updated
             iteHomo(obj,scene, Homo,homo_link,i);
         }
     }else{
@@ -631,13 +633,15 @@ bool judgeHomoDistance( Mat& H,vector<cv::Point2f>& obj,vector<cv::Point2f>& sce
     vector<int> outlier_id;
     for(int i =0 ;i < obj.size(); ++i)
     {
-        double x1_[3][1] = { obj[i].x,obj[i].y,1 };
-        Mat x1 = Mat(3,1,CV_64FC1,x1_);
-        double x2_[3][1] = { scene[i].x,scene[i].y,1 };
-        Mat x2 = Mat(3,1,CV_64FC1,x2_);
+        vector<Point2f> pix,target_pix;
+        pix.push_back(obj[i]);
 
-        Mat dil = H*x1 - x2;
-        if(sqrt( pow(dil.at<Vec3d>(0,0)[0],2) + pow(dil.at<Vec3d>(1,0)[0],2) ) <= 3 ) // within 3 pixel regions
+        perspectiveTransform(pix,target_pix,H);
+
+        target_pix[0].x = target_pix[0].x - scene[i].x;
+        target_pix[0].y = target_pix[0].y - scene[i].y;
+
+        if(sqrt( pow(target_pix[0].x,2) + pow(target_pix[0].y,2) ) <= 3 ) // within 3 pixel regions
         {
             continue;
         }else{
@@ -656,12 +660,13 @@ bool judgeHomoDistance( Mat& H,vector<cv::Point2f>& obj,vector<cv::Point2f>& sce
 
         for(int i = 0; i < outlier_id.size(); ++i)
         {
-            obj[ outlier_id[i] ].x = -10;
-            scene[ outlier_id[i] ].x = -10;
+            obj[ outlier_id[i] ].x = -1;
+            scene[ outlier_id[i] ].x = -1;
         }
-        for(std::vector<cv::Point2f>::iterator it = obj.begin(); it != obj.end();)
+        for(std::vector<cv::Point2f>::iterator it = obj.begin();
+            it != obj.end();)
         {
-            if( abs((*it).x+10) < 1e-4 )
+            if( abs((*it).x+1) < 1e-4 )
             {
                 it = obj.erase(it);
                 count++;
@@ -675,9 +680,10 @@ bool judgeHomoDistance( Mat& H,vector<cv::Point2f>& obj,vector<cv::Point2f>& sce
         }
 
         count = 0;
-        for(std::vector<cv::Point2f>::iterator it = scene.begin(); it != scene.end();)
+        for(std::vector<cv::Point2f>::iterator it = scene.begin();
+            it != scene.end();)
         {
-            if( abs((*it).x+10) < 1e-4 )
+            if( abs((*it).x+1) < 1e-4 )
             {
                 it = scene.erase(it);
                 count++;
@@ -819,8 +825,8 @@ int findNearestId(vec2dd& dist, int& id)
     int min = 1000000;
     int targ_id = -1;
 
-    cout << "dist[id].size = " << dist[id].size() << endl;
-    cout << "dist.size = " << dist.size() << endl;
+//    cout << "dist[id].size = " << dist[id].size() << endl;
+//    cout << "dist.size = " << dist.size() << endl;
 
     for(int i = 0; i < dist[id].size(); ++i )
     {// column
