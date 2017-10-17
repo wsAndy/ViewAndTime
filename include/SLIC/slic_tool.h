@@ -14,6 +14,7 @@
 #include "string"
 #include "set"
 #include "map"
+#include <algorithm>
 // #include "SLIC/slic.h"
 
 using namespace std;
@@ -26,7 +27,7 @@ using namespace cv;
 
 #define FEATURE_NUMBER_REGION 10
 #define HOMO_MIN_NUM  10
-#define ITERATOR_TIMES_FOR_HOMO 30
+#define ITERATOR_TIMES_FOR_HOMO 15
 
 //namespace slic_tool{
 
@@ -103,5 +104,14 @@ void findNearestIdAndUpdateCluster(vec2di& cluster, vec2dd& dist_table, vector<c
 void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_point2, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, vec2dd& dist_table, vector<Point3f>& center, int count);
 
 bool iteHomo(vector<Point2f>& obj, vector<Point2f>& scene, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, int i);
+
+// neighbor
+vector<int> getFeatureNumberInCluster(vector<  cv::Point2f >& mat_point1,vec2di& cluster);
+
+void updateCluster(vector< vector<int> >& cluster, map<int,int>& link);
+
+void iterClusterWithNeighbor(vector< vector<int> >& cluster,vector<  cv::Point2f >& mat_point, vector<int>& id_NotEnough);
+
+void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_point2, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link ,int count);
 
 #endif

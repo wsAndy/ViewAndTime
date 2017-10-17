@@ -78,7 +78,12 @@ int main()
     cout << "mat point1 = " << mat_point1.size() <<endl;
     cout << "mat point2 = " << mat_point2.size() <<endl;
 
+
     Mat derformMat1 = getCorresponseMaps(cluster1, mat_point1, mat_point2);
+
+    imshow("def",derformMat1);
+    waitKey(0);
+
 //    Mat derformMat2 = getCorresponseMaps(cluster2, mat_point2, mat_point1);
 
     warp(img1_col,derformMat1);

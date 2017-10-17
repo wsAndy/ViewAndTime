@@ -1,15 +1,16 @@
-SUPERPIXLE ID: 264   need to merge again.
-SUPERPIXLE ID: 265   need to merge again.
-SUPERPIXLE ID: 346   need to merge again.
-SUPERPIXLE ID: 571   need to merge again.
-SUPERPIXLE ID: 604   need to merge again.
-SUPERPIXLE ID: 925   need to merge again.
-SUPERPIXLE ID: 1182   need to merge again.
-SUPERPIXLE ID: 1215   need to merge again.
-SUPERPIXLE ID: 1356   need to merge again.
-SUPERPIXLE ID: 1469   need to merge again.
-SUPERPIXLE ID: 2078   need to merge again.
-出现这个情况，在cluster那边不断增加 ID，导致每一次迭代需要创建越来越多的资源...
-这边有BUG！！
+
+SUPERPIXLE ID: 8   need to merge again.
+SUPERPIXLE ID: 24   need to merge again.
+SUPERPIXLE ID: 54   need to merge again.
+SUPERPIXLE ID: 55   need to merge again.
+SUPERPIXLE ID: 93   need to merge again.
+SUPERPIXLE ID: 94   need to merge again.
+SUPERPIXLE ID: 96   need to merge again.
+SUPERPIXLE ID: 103   need to merge again.
+SUPERPIXLE ID: 113   need to merge again.
+SUPERPIXLE ID: 118   need to merge again.
+merge again 
+
+SUPERPIXEL的ID始终固定，即区域没有进行更新。
 
 另外，主要的问题在于  不能使用 距离最近，这样会导致跳转的出现，必须使用边缘相邻。。

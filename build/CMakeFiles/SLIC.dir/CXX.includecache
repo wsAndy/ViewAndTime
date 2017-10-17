@@ -43,6 +43,8 @@ set
 ../include/SLIC/set
 map
 ../include/SLIC/map
+algorithm
+-
 
 /Users/sheng/Documents/testopencv/ViewAndTime/src/SLIC/slic.cpp
 SLIC/slic.h

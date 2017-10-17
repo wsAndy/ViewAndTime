@@ -55,6 +55,8 @@ set
 ../include/SLIC/set
 map
 ../include/SLIC/map
+algorithm
+-
 
 ../include/ShapeMatch/lap.h
 stdio.h

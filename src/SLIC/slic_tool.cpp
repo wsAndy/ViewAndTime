@@ -236,6 +236,74 @@ void findNearestIdAndUpdateCluster(vector<vector<int> > & cluster,
 
 }
 
+
+void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_point2, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link ,int count)
+{
+    count ++;
+    Homo.clear();
+    homo_link.clear();
+
+    vector< set<int> > region_featureID;
+    std::vector<int> merge_again_id;
+
+//    displayCenterWithCluster(center,cluster);
+
+    for(int i = 0; i < findmaxclu(cluster); ++i)
+    {
+        set<int> tmp;
+
+        tmp.insert(-1);
+        region_featureID.push_back(tmp);
+    }
+    for(int i = 0; i < mat_point1.size(); ++i)
+    {
+        int id = cluster[int(mat_point1[i].x)][int(mat_point1[i].y)];
+        region_featureID[id].insert(i); // means id-th superpixel save feature i-th feature
+    }
+
+    cout << "region_featureID.size() = " << region_featureID.size() <<endl;
+    for(int i = 0; i < region_featureID.size(); ++i)
+    {
+        if(region_featureID[i].size() == 1)    continue;
+
+        std::vector<cv::Point2f> obj;
+        std::vector<cv::Point2f> scene;
+        for(std::set<int>::iterator j = region_featureID[i].begin();
+            j!=region_featureID[i].end(); ++j)
+        {
+            if(*j != -1)
+            {
+                obj.push_back(mat_point1[*j]);
+                scene.push_back(mat_point2[*j]);
+            }
+        }
+        // 此时的 obj scene是当前第i个超像素区域的特征id
+
+        if ( iteHomo(obj,scene,Homo,homo_link,i) )
+        {
+            // get homography with enough feature
+            ;
+        }
+        else{
+            // need to merge again
+            cout << "SUPERPIXLE ID: " << i << "   need to merge again."<< endl;
+            merge_again_id.push_back(i); // i is cluster ID
+        }
+    }
+
+    if(merge_again_id.size() > 0 && count <= ITERATOR_TIMES_FOR_HOMO )
+    {
+        cout << "merge again " <<endl;
+        iterClusterWithNeighbor(cluster,mat_point1,merge_again_id);
+        cout << "merge again cluster size = " << findmaxclu(cluster) << endl;
+        calHomo(cluster,mat_point1,mat_point2,Homo,homo_link, count);
+    }
+
+
+
+}
+
+
 void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_point2, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, vec2dd& dist_table,vector<Point3f>& center ,int count)
 {
     count ++;
@@ -335,16 +403,17 @@ void getSuperpixelHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int
     count = 0;
 
 //    set<int> id = getClusterID(cluster);
-    vector<cv::Point3f> center = getCenterFromCluster(cluster);
 
-    vector<int> id_NotEnough = findNotenoughFeatureID(cluster,mat_point1);
+    // test for neighbor
+//    vector<cv::Point3f> center = getCenterFromCluster(cluster);
+//    vector<int> id_NotEnough = findNotenoughFeatureID(cluster,mat_point1);
+//    for(int i = 0; i < id_NotEnough.size() ; ++i)
+//    {
+//        cout << id_NotEnough[i] << "   ";
+//    }
+//    cout << endl;
 
-    for(int i = 0; i < id_NotEnough.size() ; ++i)
-    {
-        cout << id_NotEnough[i] << "   ";
-    }
-    cout << endl;
-
+    /*
     vec2dd dist_table = createDistMat(center);
     updateDistMat(dist_table,id_NotEnough);
 
@@ -355,6 +424,98 @@ void getSuperpixelHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int
 
     cout << "into calHomo" <<endl;
     calHomo(cluster,mat_point1,mat_point2,Homo,homo_link, dist_table, center, count);
+
+    */
+
+
+    // test with neighbor
+    vector<int> id_NotEnough = findNotenoughFeatureID(cluster,mat_point1);
+
+    iterClusterWithNeighbor(cluster,mat_point1, id_NotEnough);
+
+    calHomo(cluster,mat_point1,mat_point2,Homo,homo_link, count);
+
+
+
+
+}
+
+void iterClusterWithNeighbor(vector<vector<int> > &cluster, vector<Point2f> &mat_point1, vector<int>& id_NotEnough)
+{
+    vector< set<int> > neib = findNeighborSurperpixels(cluster);
+    vector<int> featureNumber = getFeatureNumberInCluster(mat_point1,cluster);
+
+    vector<int> surround_with_no_feature_region_ID;
+
+    map<int,int> link_target_id;
+
+
+
+    for(int i = 0; i < id_NotEnough.size(); ++i)
+    {
+        // id: id_NotEnough[i]
+        // neib[ id_NotEnough[i] ] 集合饱含所有相邻id
+        vector<int> tmp_target_id;// 临时存储周围特征足够多区域id
+
+        for(std::set<int>::iterator it = neib[ id_NotEnough[i] ].begin();
+            it != neib[ id_NotEnough[i] ].end();
+            it ++)
+        {
+            if( featureNumber[*it] >= FEATURE_NUMBER_REGION)
+            {
+                tmp_target_id.push_back(*it);
+            }
+        }
+
+        if(tmp_target_id.size() > 0)
+        {
+            int target_neighbor_id = std::distance( tmp_target_id.begin(),
+                                                    max_element( tmp_target_id.begin(), tmp_target_id.end() ));
+            link_target_id[ id_NotEnough[i] ] = tmp_target_id[ target_neighbor_id ];
+
+        }else{
+            surround_with_no_feature_region_ID.push_back(i);
+        }
+    }
+    updateCluster(cluster,link_target_id); // cluster 完成更新，检查surround_with_no_feature_region_ID
+
+
+    if(surround_with_no_feature_region_ID.size() >0)
+    {
+        vector<int> id_NotEnough2 = findNotenoughFeatureID(cluster,mat_point1);
+
+        // 可能下面还是有问题！！！！
+        id_NotEnough.clear();
+        for(int i = 0; i < id_NotEnough2.size(); ++i)
+        {
+            id_NotEnough.push_back(id_NotEnough2[i]);
+        }
+        // 重复之前
+        iterClusterWithNeighbor(cluster,mat_point1,id_NotEnough);
+    }
+
+}
+
+void updateCluster(vector<vector<int> > &cluster, map<int, int> &link)
+{
+    vector<int> id;
+    for(std::map<int,int>::iterator it = link.begin();
+        it != link.end();
+        it ++ )
+    {
+        id.push_back(it->first);
+    }
+
+    for(int i = 0; i < cluster.size(); ++i)
+    {
+        for(int j =0; j < cluster[0].size(); ++j)
+        {
+            if( find(id.begin(), id.end(), cluster[i][j])!=id.end() )
+            {
+                cluster[i][j] = link[ cluster[i][j] ];
+            }
+        }
+    }
 }
 
 void iteratorGetHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link, std::vector<cv::Point2f>& mat_point1, std::vector<cv::Point2f>& mat_point2, int& count)
@@ -571,6 +732,10 @@ Mat getCorresponseMaps(vec2di& cluster,vector<  cv::Point2f >& mat_point1,vector
 
     getSuperpixelHomo(cluster,Homo,homo_link, mat_point1, mat_point2, counter_gethomo);
 
+    Mat wsimg = getColorCluster(cluster);
+    imshow("wsimg",wsimg);
+    waitKey(0);
+
 //    iteratorGetHomo(cluster,Homo,homo_link, mat_point1, mat_point2, counter_gethomo);
 
 
@@ -701,6 +866,23 @@ bool judgeHomoDistance( Mat& H,vector<cv::Point2f>& obj,vector<cv::Point2f>& sce
     }
 }
 
+vector<int> getFeatureNumberInCluster(vector<  cv::Point2f >& mat_point1,vec2di& cluster)
+{
+    vector<int> vec_count_cluster;
+    int max_clu = findmaxclu(cluster);
+
+    for(int i = 0; i < max_clu; ++i)
+    {
+        vec_count_cluster.push_back(0); // vec_count_cluster -> ID
+    }
+    for(int i = 0; i < mat_point1.size(); ++i)
+    {
+        int ID = cluster[int(mat_point1[i].x)][int(mat_point1[i].y)];
+        vec_count_cluster[ID]++; // count the number of features in region
+    }
+    return vec_count_cluster;
+
+}
 
 vector<int> findNofeatureId(vector<  cv::Point2f >& mat_point1,vec2di& cluster)
 {
@@ -993,7 +1175,7 @@ void displayCenterWithCluster(vector< cv::Point3f > &center, vec2di & cluster)
             putText(sin,str,Point2f(center[i].x, center[i].y),FONT_HERSHEY_COMPLEX,0.4,cv::Scalar(0, 0, 0),1,8,0);
         }
     }
-//    imwrite("/Users/sheng/Desktop/superpixel_center.jpg",sin);
+    imwrite("/Users/sheng/Desktop/superpixel_center.jpg",sin);
     imshow("sin",sin);
     waitKey(0);
 }
@@ -1120,7 +1302,8 @@ Mat getColorCluster(vec2di & cluster)
     vector<Scalar> sup_col;
     for(int i =0; i < max_clu; ++i)
     {
-        sup_col.push_back(Scalar(rand()%255+1, rand()%255+1, rand()%255+1 ));
+//        sup_col.push_back(Scalar(rand()%255+1, rand()%255+1, rand()%255+1 ));
+        sup_col.push_back(Scalar(rand()%100+150, rand()%100+150, rand()%100+150));
     }
 
     int h = cluster[0].size();
