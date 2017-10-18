@@ -25,9 +25,11 @@ using namespace cv;
 #define vec2di vector< vector<int> >
 #define vec2db vector< vector<bool> >
 
-#define FEATURE_NUMBER_REGION 10
-#define HOMO_MIN_NUM  10
-#define ITERATOR_TIMES_FOR_HOMO 15
+#define FEATURE_NUMBER_REGION 15
+#define HOMO_MIN_NUM  15
+#define ITERATOR_TIMES_FOR_HOMO 30
+#define HOMO_DISTANCE 2
+#define SUPER_MIN_NUM 2
 
 //namespace slic_tool{
 
@@ -44,6 +46,7 @@ void displayShapeMatchImg(Mat& , vector<Point2f>&, Mat&, vector<Point2f>& );
 // for superpixels
 // show superpixels cluster
 Mat getColorCluster(vec2di & cluster);
+void displayColorCluster(vec2di & cluster);
 Mat getSingleCluster(vec2di & cluster);
 vec2di getSuperPixels(Mat& img1_col);
 // for  cv::Point3f, I define [x,y,counter]
@@ -95,7 +98,7 @@ void iteratorGetHomo(vec2di& , std::vector<cv::Mat>&, std::map<int,int>&, std::v
 /// new function
 void getSuperpixelHomo(vec2di& , std::vector<cv::Mat>&, std::map<int,int>&, std::vector<cv::Point2f>&, std::vector<cv::Point2f>&, int& );
 
-set<int> getClusterID(vec2di&);
+set<int> getClusterID(vec2di& cluster);
 
 vector<int> findNotenoughFeatureID(vec2di&, vector<Point2f>&);
 

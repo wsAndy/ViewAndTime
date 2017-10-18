@@ -15,6 +15,12 @@
 //using namespace superpixel;
 //using namespace slic_tool;
 
+void displayColorCluster(vector<vector<int> > &cluster)
+{
+    Mat img = getColorCluster(cluster);
+    imshow("cluster-display",img);
+    waitKey(0);
+}
 
 void warp( Mat& img1_col, Mat& derformMat1,  Mat& img2_col, Mat& derformMat2, int Vir_num)
 {
@@ -165,7 +171,7 @@ set<int> getClusterID(vector<vector<int> > & cluster)
     set<int > id;
     for(int i = 0; i < cluster.size(); ++i)
     {// cols
-        for(int j = 0; j < cluster[0].size(); +j)
+        for(int j = 0; j < cluster[0].size(); ++j)
         {//rows
             id.insert(cluster[i][j]);
         }
@@ -288,18 +294,17 @@ void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_
             // need to merge again
             cout << "SUPERPIXLE ID: " << i << "   need to merge again."<< endl;
             merge_again_id.push_back(i); // i is cluster ID
+            // 有些区域在iteHomo里面的特征差距离一定会超过一个阈值，所以还是限制一下
         }
     }
 
-    if(merge_again_id.size() > 0 && count <= ITERATOR_TIMES_FOR_HOMO )
+    if(merge_again_id.size() >= SUPER_MIN_NUM && count <= ITERATOR_TIMES_FOR_HOMO )
     {
         cout << "merge again " <<endl;
         iterClusterWithNeighbor(cluster,mat_point1,merge_again_id);
-        cout << "merge again cluster size = " << findmaxclu(cluster) << endl;
+//        cout << "merge again cluster size = " << findmaxclu(cluster) << endl;
         calHomo(cluster,mat_point1,mat_point2,Homo,homo_link, count);
     }
-
-
 
 }
 
@@ -431,11 +436,11 @@ void getSuperpixelHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int
     // test with neighbor
     vector<int> id_NotEnough = findNotenoughFeatureID(cluster,mat_point1);
 
+    cout << "start iterClusterWithNeighbor" <<endl;
     iterClusterWithNeighbor(cluster,mat_point1, id_NotEnough);
 
+    cout << "leave iterClusterWithNeighbor" <<endl;
     calHomo(cluster,mat_point1,mat_point2,Homo,homo_link, count);
-
-
 
 
 }
@@ -449,39 +454,65 @@ void iterClusterWithNeighbor(vector<vector<int> > &cluster, vector<Point2f> &mat
 
     map<int,int> link_target_id;
 
-
+//cout << "in iterClusterWithNeighbor" <<endl;
+//for(int i = 0; i < featureNumber.size(); ++i)
+//{
+//    cout << "featureNumber["<<i<<"] = " << featureNumber[i] << endl;
+//}
+//cout << "neib size = " << neib.size() << endl;
+//cout << "id_NotEnough size = " << id_NotEnough.size() << endl;
 
     for(int i = 0; i < id_NotEnough.size(); ++i)
     {
         // id: id_NotEnough[i]
         // neib[ id_NotEnough[i] ] 集合饱含所有相邻id
-        vector<int> tmp_target_id;// 临时存储周围特征足够多区域id
+        vector<int> tmp_target_featureNum;// 临时存储周围特征足够多区域id
+        vector<int> tmp_target_id;
 
         for(std::set<int>::iterator it = neib[ id_NotEnough[i] ].begin();
             it != neib[ id_NotEnough[i] ].end();
             it ++)
         {
+            if( *it < 0) continue; // since each element in neib has -1 value
             if( featureNumber[*it] >= FEATURE_NUMBER_REGION)
             {
-                tmp_target_id.push_back(*it);
+                tmp_target_featureNum.push_back(featureNumber[*it]);// feature size
+                tmp_target_id.push_back(*it); // neighbor ID
             }
         }
 
-        if(tmp_target_id.size() > 0)
+        if(tmp_target_featureNum.size() > 0)
         {
-            int target_neighbor_id = std::distance( tmp_target_id.begin(),
-                                                    max_element( tmp_target_id.begin(), tmp_target_id.end() ));
-            link_target_id[ id_NotEnough[i] ] = tmp_target_id[ target_neighbor_id ];
+            int target_neighbor_id = std::distance( tmp_target_featureNum.begin(),
+                                                    max_element( tmp_target_featureNum.begin(), tmp_target_featureNum.end() ));
+//            link_target_id[ id_NotEnough[i] ] = tmp_target_id[ target_neighbor_id ];
+            link_target_id[ id_NotEnough[i] ] = tmp_target_id[target_neighbor_id];
 
         }else{
             surround_with_no_feature_region_ID.push_back(i);
         }
     }
+
+//    cout << "iterClusterWithNeighbor: before updateCluster" <<endl;
+//    cout << "link target id size = " << link_target_id.size() << endl;
+
+//    for(std::map<int,int>::iterator it = link_target_id.begin();
+//        it != link_target_id.end();
+//        it ++)
+//    {
+//        cout << it->first << " convert to " << it->second <<endl;
+//    }
+
+    // once link target id is zero, then cluster not update.
     updateCluster(cluster,link_target_id); // cluster 完成更新，检查surround_with_no_feature_region_ID
 
 
+//    displayColorCluster(cluster);
+//    cout << "iterClusterWithNeighbor: after updateCluster -- " <<endl;
+
     if(surround_with_no_feature_region_ID.size() >0)
     {
+//        cout << "surround_with_no_feature_region_ID size = " << surround_with_no_feature_region_ID.size() << endl;
         vector<int> id_NotEnough2 = findNotenoughFeatureID(cluster,mat_point1);
 
         // 可能下面还是有问题！！！！
@@ -494,10 +525,16 @@ void iterClusterWithNeighbor(vector<vector<int> > &cluster, vector<Point2f> &mat
         iterClusterWithNeighbor(cluster,mat_point1,id_NotEnough);
     }
 
+//    cout << "leave iterClusterWithNeighbor" <<endl;
+
+    cout << "应该是在判断homo那边的pxiel的距离那边，出现了必须要强制更新全部的一个问题，是那边的问题，这边的问题不大了，"
+            "但是目前还是出现了最后剩下两个区域，不断相互替换的问题，那么就是有问题啊(依然可能是在homo那边的问题)" << endl;
 }
 
 void updateCluster(vector<vector<int> > &cluster, map<int, int> &link)
 {
+    if(link.size() == 0)
+        return ; // fix bugs
     vector<int> id;
     for(std::map<int,int>::iterator it = link.begin();
         it != link.end();
@@ -732,9 +769,9 @@ Mat getCorresponseMaps(vec2di& cluster,vector<  cv::Point2f >& mat_point1,vector
 
     getSuperpixelHomo(cluster,Homo,homo_link, mat_point1, mat_point2, counter_gethomo);
 
-    Mat wsimg = getColorCluster(cluster);
-    imshow("wsimg",wsimg);
-    waitKey(0);
+//    Mat wsimg = getColorCluster(cluster);
+//    imshow("wsimg",wsimg);
+//    waitKey(0);
 
 //    iteratorGetHomo(cluster,Homo,homo_link, mat_point1, mat_point2, counter_gethomo);
 
@@ -795,6 +832,11 @@ Mat getCorresponseMaps(vec2di& cluster,vector<  cv::Point2f >& mat_point1,vector
 
 bool judgeHomoDistance( Mat& H,vector<cv::Point2f>& obj,vector<cv::Point2f>& scene )
 {
+//    cout << "============  BIG TEST  ============" << endl;
+//    cout << "judgeHomoDistance  DIRECTLY RETURN TRUE" <<endl;
+
+//    return true;
+
     vector<int> outlier_id;
     for(int i =0 ;i < obj.size(); ++i)
     {
@@ -806,7 +848,7 @@ bool judgeHomoDistance( Mat& H,vector<cv::Point2f>& obj,vector<cv::Point2f>& sce
         target_pix[0].x = target_pix[0].x - scene[i].x;
         target_pix[0].y = target_pix[0].y - scene[i].y;
 
-        if(sqrt( pow(target_pix[0].x,2) + pow(target_pix[0].y,2) ) <= 3 ) // within 3 pixel regions
+        if(sqrt( pow(target_pix[0].x,2) + pow(target_pix[0].y,2) ) <= HOMO_DISTANCE ) // within 3 pixel regions
         {
             continue;
         }else{
@@ -884,9 +926,15 @@ vector<int> getFeatureNumberInCluster(vector<  cv::Point2f >& mat_point1,vec2di&
 
 }
 
+// 有些区域本身就不会再cluster中出现，所以这边这样通过max来计算得到的结果始终是错误的
 vector<int> findNofeatureId(vector<  cv::Point2f >& mat_point1,vec2di& cluster)
 {
     vector<int> vec_count_cluster;
+    cout << "start getClusterID" <<endl;
+    set<int> idset = getClusterID(cluster);
+
+    cout << "findNofeatureId: idset size = " << idset.size() << endl;
+
     int max_clu = findmaxclu(cluster);
     cout << "findNofeatureId: cluster size = " << max_clu << endl;
 
@@ -904,6 +952,10 @@ vector<int> findNofeatureId(vector<  cv::Point2f >& mat_point1,vec2di& cluster)
     for(int i = 0; i < vec_count_cluster.size(); ++i)
     {
 //        cout << vec_count_cluster[i] << endl;
+        if( find(idset.begin(),idset.end(),i) == idset.end() )
+        {
+            continue; // cluster中没有出现的那个区域的id，就跳过
+        }
         if(vec_count_cluster[i] < FEATURE_NUMBER_REGION) // for homography ... 4 is the lowest request
                                       // 30 is a trick....
                                       // small number leads to error matching and error warp result without update homography again

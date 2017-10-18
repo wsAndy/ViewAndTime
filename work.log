@@ -1,16 +1,6 @@
+目前发现，如果没有足够多的特征，就会出现在homography计算阶段的无法收敛。
+会导致计算homo出错。
 
-SUPERPIXLE ID: 8   need to merge again.
-SUPERPIXLE ID: 24   need to merge again.
-SUPERPIXLE ID: 54   need to merge again.
-SUPERPIXLE ID: 55   need to merge again.
-SUPERPIXLE ID: 93   need to merge again.
-SUPERPIXLE ID: 94   need to merge again.
-SUPERPIXLE ID: 96   need to merge again.
-SUPERPIXLE ID: 103   need to merge again.
-SUPERPIXLE ID: 113   need to merge again.
-SUPERPIXLE ID: 118   need to merge again.
-merge again 
-
-SUPERPIXEL的ID始终固定，即区域没有进行更新。
-
-另外，主要的问题在于  不能使用 距离最近，这样会导致跳转的出现，必须使用边缘相邻。。
+最后calHomo那边会导致出现两个饱含几乎所有的两个区域之间相互转化。
+SUPERPIXLE ID: 33   need to merge again.
+SUPERPIXLE ID: 88   need to merge again.

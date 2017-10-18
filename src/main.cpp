@@ -21,9 +21,12 @@ using namespace  cv;
 
 int main()
 {
-    std::string path = "/Users/sheng/Desktop/MSR3DVideo-Breakdancers/";
-    Mat img1_col = imread( path + "cam0/color-cam0-f000.jpg");
-    Mat img2_col = imread( path + "cam2/color-cam2-f000.jpg");
+//    std::string path = "/Users/sheng/Desktop/MSR3DVideo-Breakdancers/";
+//    Mat img1_col = imread( path + "cam0/color-cam0-f000.jpg");
+//    Mat img2_col = imread( path + "cam2/color-cam2-f000.jpg");
+
+    Mat img1_col = imread("/Users/sheng/Downloads/templeRing/templeR0001.png");
+    Mat img2_col = imread("/Users/sheng/Downloads/templeRing/templeR0002.png");
 
 //    resize(img1_col,img1_col,cv::Size(int(img1_col.cols/2),int(img1_col.rows/2)));
 //    resize(img2_col,img2_col,cv::Size(int(img2_col.cols/2),int(img2_col.rows/2)));
@@ -71,9 +74,8 @@ int main()
 //        cout << "point1 size != point2 size" << endl;
 //    }
 
-
     vec2di cluster1 = getSuperPixels(img1_col);
-//    vec2di cluster2 = getSuperPixels(img2_col);
+    vec2di cluster2 = getSuperPixels(img2_col);
 
     cout << "mat point1 = " << mat_point1.size() <<endl;
     cout << "mat point2 = " << mat_point2.size() <<endl;
@@ -81,15 +83,8 @@ int main()
 
     Mat derformMat1 = getCorresponseMaps(cluster1, mat_point1, mat_point2);
 
-    imshow("def",derformMat1);
-    waitKey(0);
+    Mat derformMat2 = getCorresponseMaps(cluster2, mat_point2, mat_point1);
 
-//    Mat derformMat2 = getCorresponseMaps(cluster2, mat_point2, mat_point1);
-
-    warp(img1_col,derformMat1);
-//    warp(img1_col, derformMat1, img2_col,derformMat2,10);
-
-    // AF, but how AF change the result ???
 //    vector<Mat> vec_sp;
 //    split(derformMat,vec_sp);
 
@@ -104,6 +99,16 @@ int main()
 //    minMaxIdx(out, &min, &max);
 
 //    out.convertTo(out, CV_8UC1, 255 / (max - min), -min);
+
+
+//    imshow("def",derformMat1);
+//    waitKey(0);
+
+
+//    warp(img2_col,derformMat1);
+    warp(img1_col, derformMat1, img2_col,derformMat2,10);
+
+    // AF, but how AF change the result ???
 //    imshow("Diffuesed Image", out);
 //    waitKey(0);
 
