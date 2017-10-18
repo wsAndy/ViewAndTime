@@ -65,5 +65,5 @@ add_executable(run src/main.cpp )
 target_link_libraries(run SLIC AF ShapeMatch)
 
 
-add_executable(test src/test.cpp)
-target_link_libraries(test ${OpenCV_LIBS})
+#add_executable(test src/test.cpp)
+#target_link_libraries(test ${OpenCV_LIBS})
