@@ -4,9 +4,10 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/arvr/Desktop/ViewAndTime/src/SLIC/slic.cpp" "/home/arvr/Desktop/ViewAndTime/build/CMakeFiles/SLIC.dir/src/SLIC/slic.cpp.o"
+  "/Users/sheng/Documents/testopencv/ViewAndTime/src/SLIC/slic.cpp" "/Users/sheng/Documents/testopencv/ViewAndTime/build/CMakeFiles/SLIC.dir/src/SLIC/slic.cpp.o"
+  "/Users/sheng/Documents/testopencv/ViewAndTime/src/SLIC/slic_tool.cpp" "/Users/sheng/Documents/testopencv/ViewAndTime/build/CMakeFiles/SLIC.dir/src/SLIC/slic_tool.cpp.o"
   )
-set(CMAKE_CXX_COMPILER_ID "GNU")
+set(CMAKE_CXX_COMPILER_ID "Clang")
 
 # Preprocessor definitions for this target.
 set(CMAKE_TARGET_DEFINITIONS_CXX

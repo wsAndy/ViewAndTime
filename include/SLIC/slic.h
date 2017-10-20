@@ -26,6 +26,7 @@ using namespace cv;
 
 #define NR_ITERATIONS 10
 
+//namespace superpixel{
 /*
  * class Slic.
  *
@@ -85,6 +86,6 @@ public:
 };
 
 
-
+//}
 
 #endif

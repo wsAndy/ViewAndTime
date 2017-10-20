@@ -1,0 +1,6 @@
+目前发现，如果没有足够多的特征，就会出现在homography计算阶段的无法收敛。
+会导致计算homo出错。
+
+最后calHomo那边会导致出现两个饱含几乎所有的两个区域之间相互转化。
+SUPERPIXLE ID: 33   need to merge again.
+SUPERPIXLE ID: 88   need to merge again.

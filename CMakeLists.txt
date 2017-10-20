@@ -35,15 +35,35 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 add_library( SLIC SHARED
 
 src/SLIC/slic.cpp
+src/SLIC/slic_tool.cpp
 )
 
 target_link_libraries(SLIC
     ${OpenCV_LIBS}
 )
 
+add_library( ShapeMatch SHARED
+    src/ShapeMatch/shapematch.cpp
+#    src/ShapeMatch/shape_tool.cpp
+)
+target_link_libraries(ShapeMatch
+    ${OpenCV_LIBS}
+)
+
+add_library( AF SHARED
+
+    src/AF/anisometric.cpp
+ )
+target_link_libraries(AF
+    ${OpenCV_LIBS}
+)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/)
 
 
-add_executable(run src/main.cpp)
-target_link_libraries(run SLIC)
+add_executable(run src/main.cpp )
+target_link_libraries(run SLIC AF ShapeMatch)
+
+
+#add_executable(test src/test.cpp)
+#target_link_libraries(test ${OpenCV_LIBS})
