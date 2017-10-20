@@ -24,12 +24,14 @@ int main()
 //    std::string path = "/Users/sheng/Desktop/MSR3DVideo-Breakdancers/";
 //    Mat img1_col = imread( path + "cam0/color-cam0-f000.jpg");
 //    Mat img2_col = imread( path + "cam2/color-cam2-f000.jpg");
+    // Mat img1_col = imread("/Users/sheng/Desktop/museum/2.png");
+    // Mat img2_col = imread("/Users/sheng/Desktop/museum/3.png");
 
-    Mat img1_col = imread("/Users/sheng/Downloads/templeRing/templeR0001.png");
-    Mat img2_col = imread("/Users/sheng/Downloads/templeRing/templeR0002.png");
+    // resize(img1_col,img1_col,cv::Size(int(img1_col.cols/2),int(img1_col.rows/2)));
+    // resize(img2_col,img2_col,cv::Size(int(img2_col.cols/2),int(img2_col.rows/2)));
 
-//    resize(img1_col,img1_col,cv::Size(int(img1_col.cols/2),int(img1_col.rows/2)));
-//    resize(img2_col,img2_col,cv::Size(int(img2_col.cols/2),int(img2_col.rows/2)));
+   Mat img1_col = imread("/Users/sheng/Downloads/templeRing/templeR0001.png");
+   Mat img2_col = imread("/Users/sheng/Downloads/templeRing/templeR0002.png");
 
     vector<  cv::Point2f > mat_point1, mat_point2;
 
@@ -105,8 +107,59 @@ int main()
 //    waitKey(0);
 
 
-//    warp(img2_col,derformMat1);
-    warp(img1_col, derformMat1, img2_col,derformMat2,10);
+//    Mat Hab = findHomography(mat_point1,mat_point2,RANSAC);
+//    Mat Hba = findHomography(mat_point2,mat_point1,RANSAC);
+
+//    Mat dst1,dst2;
+////    warpAffine(img1_col,dst1,Hab,img1_col.size());
+////    warpAffine(img2_col,dst2,Hba,img2_col.size());
+
+//    vector<cv::Point2f> im1,im2,tar1,tar2;
+//    for(int i = 0; i < img1_col.rows; ++i)
+//    {
+//        for(int j = 0; j < img1_col.cols; ++j)
+//        {
+//            im1.push_back(Point2f(j,i));
+//            im2.push_back(Point2f(j,i));
+//        }
+//    }
+
+//    perspectiveTransform(im1,tar1,Hab);
+//    perspectiveTransform(im2,tar2,Hba);
+
+//    Mat to1,to2;
+//    to1 = cv::Mat::zeros(img1_col.rows,img1_col.cols,CV_8UC3);
+//    to2 = cv::Mat::zeros(img1_col.rows,img1_col.cols,CV_8UC3);
+
+//    for(int i = 0; i < tar1.size() ; ++i)
+//    {
+////            im1.push_back(Point2f(j,i));
+////            im2.push_back(Point2f(j,i));
+//        if(tar1[i].x < 0 || tar1[i].x >= img1_col.cols || tar1[i].y < 0 || tar1[i].y >= img1_col.rows )
+//            continue;
+//            to1.at<Vec3b>(tar1[i])[0] = 255;
+//            to1.at<Vec3b>(tar1[i])[1] = 255;
+//            to1.at<Vec3b>(tar1[i])[2] = 255;
+
+//    }
+//    for(int i = 0; i < tar2.size() ; ++i)
+//    {
+////            im1.push_back(Point2f(j,i));
+////            im2.push_back(Point2f(j,i));
+//        if(tar2[i].x < 0 || tar2[i].sx >= img1_col.cols || tar2[i].y < 0 || tar2[i].y >= img1_col.rows )
+//            continue;
+//            to2.at<Vec3b>(tar2[i])[0] = 255;
+//            to2.at<Vec3b>(tar2[i])[1] = 255;
+//            to2.at<Vec3b>(tar2[i])[2] = 255;
+//    }
+
+//    imshow("ab",to1);
+//    imshow("ba",to2);
+//    waitKey(0);
+
+    warp(img1_col,derformMat1,1);
+    warp(img2_col,derformMat2,2);
+//    warp(img1_col, derformMat1, img2_col,derformMat2,10);
 
     // AF, but how AF change the result ???
 //    imshow("Diffuesed Image", out);
@@ -114,4 +167,3 @@ int main()
 
     return 0;
 }
-

@@ -98,6 +98,73 @@ void warp( Mat& img1_col, Mat& derformMat1,  Mat& img2_col, Mat& derformMat2, in
 
     }
 }
+void warp( Mat& img1_col, Mat& derformMat, int index)
+{
+
+    for(int ind = 0; ind <11; ++ind)
+    {
+        // show interpolation virtual image
+        Mat vir_image = Mat::zeros(img1_col.rows,img1_col.cols,CV_8UC3);
+        for(int i =0; i < img1_col.rows; ++i)
+        {
+            for(int j = 0; j < img1_col.cols; ++j)
+            {
+                // derformMat这边存储的是位置的偏移，所以在逻辑上也不成问题
+                int x =  i + int(derformMat.at<Vec3d>(i,j)[1] * ind *0.1); // row
+                int y =  j + int(derformMat.at<Vec3d>(i,j)[0] * ind *0.1); // col
+
+                if( x < 0 || x >= vir_image.rows || y < 0 || y >= vir_image.cols)
+                {
+                    continue;
+                }
+
+                vir_image.at<Vec3b>(x,y)[0] = img1_col.at<Vec3b>(i,j)[0] ;
+
+                vir_image.at<Vec3b>(x,y)[1] = img1_col.at<Vec3b>(i,j)[1] ;
+
+                vir_image.at<Vec3b>(x,y)[2] = img1_col.at<Vec3b>(i,j)[2] ;
+
+            }
+        }
+
+
+        Mat mask = cv::Mat::zeros(vir_image.rows, vir_image.cols, CV_8UC1);
+        for(int i = 0; i < vir_image.rows; ++i)
+        {
+            for(int j = 0; j < vir_image.cols; ++j)
+            {
+                if(vir_image.at<Vec3b>(i,j)[0] ==0 &&
+                   vir_image.at<Vec3b>(i,j)[1] ==0 &&
+                   vir_image.at<Vec3b>(i,j)[2] ==0     )
+                {
+                    mask.at<uchar>(i,j) = 255;
+                }
+            }
+        }
+
+//        imshow("mask",mask);
+//        waitKey(0);
+
+
+// inpaint cost too much time !!!!
+//        cout << "inpaint cost too much time" <<endl;
+//        cv::inpaint(vir_image,mask,vir_image,3,CV_INPAINT_TELEA);
+
+        stringstream ss;
+        string str_name;
+        ss << index ;
+        ss << "_vir";
+        ss << ind;
+        ss << ".jpg";
+        ss >> str_name;
+        ss.clear();
+//        imshow( str_name.c_str() ,vir_image);
+        imwrite("/Users/sheng/Desktop/save/"+str_name,vir_image);
+//        waitKey(0);
+
+    }
+
+}
 
 void warp( Mat& img1_col, Mat& derformMat)
 {
@@ -148,7 +215,7 @@ void warp( Mat& img1_col, Mat& derformMat)
 
 
 // inpaint cost too much time !!!!
-        cout << "inpaint cost too much time" <<endl;
+//        cout << "inpaint cost too much time" <<endl;
 //        cv::inpaint(vir_image,mask,vir_image,3,CV_INPAINT_TELEA);
 
         stringstream ss;
@@ -242,8 +309,46 @@ void findNearestIdAndUpdateCluster(vector<vector<int> > & cluster,
 
 }
 
+int getClusterSize(vector<vector<int> > &cluster)
+{
+    set<int> ss = getClusterID(cluster);
+    return ss.size();
+}
 
-void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_point2, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link ,int count)
+/****
+ *
+1 convert to 14
+2 convert to 14
+3 convert to 11
+4 convert to 16
+5 convert to 8
+6 convert to 8
+8 convert to 12
+9 convert to 8
+10 convert to 16
+11 convert to 14
+12 convert to 22
+14 convert to 65
+15 convert to 14
+16 convert to 14
+17 convert to 8
+18 convert to 26
+21 convert to 22
+22 convert to 12
+25 convert to 26
+26 convert to 14
+31 convert to 38
+32 convert to 38
+38 convert to 49
+43 convert to 49
+46 convert to 49
+49 convert to 38
+ */
+void calHomo(vec2di& cluster,
+             vector<Point2f>& mat_point1,
+             vector<Point2f>& mat_point2,
+             std::vector<cv::Mat>& Homo,
+             std::map<int,int>& homo_link ,int count)
 {
     count ++;
     Homo.clear();
@@ -253,6 +358,8 @@ void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_
     std::vector<int> merge_again_id;
 
 //    displayCenterWithCluster(center,cluster);
+
+    int cluster_num = getClusterSize(cluster);
 
     for(int i = 0; i < findmaxclu(cluster); ++i)
     {
@@ -267,13 +374,13 @@ void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_
         region_featureID[id].insert(i); // means id-th superpixel save feature i-th feature
     }
 
-    cout << "region_featureID.size() = " << region_featureID.size() <<endl;
     for(int i = 0; i < region_featureID.size(); ++i)
     {
         if(region_featureID[i].size() == 1)    continue;
 
         std::vector<cv::Point2f> obj;
         std::vector<cv::Point2f> scene;
+        // 当前超像素编号ID所在区域中的所有的特征的编号
         for(std::set<int>::iterator j = region_featureID[i].begin();
             j!=region_featureID[i].end(); ++j)
         {
@@ -298,9 +405,18 @@ void calHomo(vec2di& cluster, vector<Point2f>& mat_point1, vector<Point2f>& mat_
         }
     }
 
-    if(merge_again_id.size() >= SUPER_MIN_NUM && count <= ITERATOR_TIMES_FOR_HOMO )
+    //merge_again_id.size > 1 是因为只有一个的时候可能就得不断不断找，没有必要
+
+    if(merge_again_id.size() > 1 && cluster_num > CLUSTER_MIN_NUM && count <= ITERATOR_TIMES_FOR_HOMO )
     {
         cout << "merge again " <<endl;
+        /***
+         *   这边有一个大BUG，比如1.2.14都认为验证之后是需要重新组合的
+         *   但是由于iterClusterWithNeighbor中找周围是通过区域特征编号好找
+         *   所以，由于14号本身特征很多，会把1.2付给14，，但是14本身需要更改，就会找周围其他的
+         *   此时，如果周围有更大的，14会变为那个，但是如果周围只有一个了，就会出现两者相互替换的情况
+         *
+         */
         iterClusterWithNeighbor(cluster,mat_point1,merge_again_id);
 //        cout << "merge again cluster size = " << findmaxclu(cluster) << endl;
         calHomo(cluster,mat_point1,mat_point2,Homo,homo_link, count);
@@ -393,7 +509,14 @@ bool iteHomo(vector<Point2f>& obj, vector<Point2f>& scene,
         else{
             // iterate
             // obj and scene has been updated
-            iteHomo(obj,scene, Homo,homo_link,i);
+            // donnot need this operate
+            // since homography only use four points
+            // which means when you delete some points that not used when calculate homo
+            // the result will not change.
+
+//            iteHomo(obj,scene, Homo,homo_link,i);
+
+            return false;
         }
     }else{
         // not have enough feature
@@ -403,7 +526,8 @@ bool iteHomo(vector<Point2f>& obj, vector<Point2f>& scene,
 
 
 void getSuperpixelHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int,int>& homo_link,
-                       std::vector<cv::Point2f>& mat_point1, std::vector<cv::Point2f>& mat_point2, int& count)
+                       std::vector<cv::Point2f>& mat_point1,
+                       std::vector<cv::Point2f>& mat_point2, int& count)
 {
     count = 0;
 
@@ -445,7 +569,9 @@ void getSuperpixelHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int
 
 }
 
-void iterClusterWithNeighbor(vector<vector<int> > &cluster, vector<Point2f> &mat_point1, vector<int>& id_NotEnough)
+void iterClusterWithNeighbor(vector<vector<int> > &cluster,
+                             vector<Point2f> &mat_point1,
+                             vector<int>& id_NotEnough)
 {
     vector< set<int> > neib = findNeighborSurperpixels(cluster);
     vector<int> featureNumber = getFeatureNumberInCluster(mat_point1,cluster);
@@ -462,8 +588,21 @@ void iterClusterWithNeighbor(vector<vector<int> > &cluster, vector<Point2f> &mat
 //cout << "neib size = " << neib.size() << endl;
 //cout << "id_NotEnough size = " << id_NotEnough.size() << endl;
 
+    set<int> used_cluster_id;
+    set<int> change_cluster_id;
+
     for(int i = 0; i < id_NotEnough.size(); ++i)
     {
+
+        // 出现之前已经有其他变为他的id，这个id就先跳过
+        if(used_cluster_id.size()>0 &&
+           std::find(used_cluster_id.begin(), used_cluster_id.end(),
+                 id_NotEnough[i])!= used_cluster_id.end() )
+        {
+            cout << id_NotEnough[i]<< "jump " <<endl;
+            continue; // when the target superpixels need to convert to their id, stop it.
+        }
+
         // id: id_NotEnough[i]
         // neib[ id_NotEnough[i] ] 集合饱含所有相邻id
         vector<int> tmp_target_featureNum;// 临时存储周围特征足够多区域id
@@ -473,45 +612,68 @@ void iterClusterWithNeighbor(vector<vector<int> > &cluster, vector<Point2f> &mat
             it != neib[ id_NotEnough[i] ].end();
             it ++)
         {
-            if( *it < 0) continue; // since each element in neib has -1 value
+            if( *it < 0)
+            {
+                continue; // since each element in neib has -1 value
+            }
+            if( find(change_cluster_id.begin(), change_cluster_id.end(), *it)!= change_cluster_id.end() )
+            {
+                continue; // 出现之前已经将要变化的id，直接跳过，防止其他变为他
+            }
             if( featureNumber[*it] >= FEATURE_NUMBER_REGION)
             {
                 tmp_target_featureNum.push_back(featureNumber[*it]);// feature size
                 tmp_target_id.push_back(*it); // neighbor ID
+
             }
         }
 
         if(tmp_target_featureNum.size() > 0)
         {
+            // 把特征点多的给目标
             int target_neighbor_id = std::distance( tmp_target_featureNum.begin(),
                                                     max_element( tmp_target_featureNum.begin(), tmp_target_featureNum.end() ));
-//            link_target_id[ id_NotEnough[i] ] = tmp_target_id[ target_neighbor_id ];
+
+            // 特征点少的给目标
+//            int target_neighbor_id = std::distance( tmp_target_featureNum.begin(),
+//                                                     min_element( tmp_target_featureNum.begin(), tmp_target_featureNum.end() ));
+
             link_target_id[ id_NotEnough[i] ] = tmp_target_id[target_neighbor_id];
+            used_cluster_id.insert(tmp_target_id[target_neighbor_id]); // 记录目标的id，这个id之后不准变化
+            change_cluster_id.insert( id_NotEnough[i] );// 记录要变化的id，其他的id不准变成他
 
         }else{
-            surround_with_no_feature_region_ID.push_back(i);
+            surround_with_no_feature_region_ID.push_back( id_NotEnough[i] ); // fix bugs
+//                        surround_with_no_feature_region_ID.push_back( i ); // fix bugs
         }
     }
 
 //    cout << "iterClusterWithNeighbor: before updateCluster" <<endl;
 //    cout << "link target id size = " << link_target_id.size() << endl;
 
-//    for(std::map<int,int>::iterator it = link_target_id.begin();
-//        it != link_target_id.end();
-//        it ++)
-//    {
-//        cout << it->first << " convert to " << it->second <<endl;
-//    }
+    for(std::map<int,int>::iterator it = link_target_id.begin();
+        it != link_target_id.end();
+        it ++)
+    {
+        cout << it->first << " convert to " << it->second <<endl;
+    }
 
     // once link target id is zero, then cluster not update.
     updateCluster(cluster,link_target_id); // cluster 完成更新，检查surround_with_no_feature_region_ID
 
 
 //    displayColorCluster(cluster);
+//    vector<Point3f> cen = getCenterFromCluster(cluster);
+//    displayCenterWithCluster(cen, cluster);
 //    cout << "iterClusterWithNeighbor: after updateCluster -- " <<endl;
 
-    if(surround_with_no_feature_region_ID.size() >0)
+    cout << "link_target_id = "<< link_target_id.size() << endl;
+    if(surround_with_no_feature_region_ID.size() >0 && link_target_id.size() > 1) // > 1是因为只有一个的时候(map是一组)，就不用在进行更换了
     {
+//        for(int i = 0; i < surround_with_no_feature_region_ID.size(); ++i)
+//        {
+//            cout << "TEST ; surrond " << surround_with_no_feature_region_ID[i] << endl;
+//        }
 //        cout << "surround_with_no_feature_region_ID size = " << surround_with_no_feature_region_ID.size() << endl;
         vector<int> id_NotEnough2 = findNotenoughFeatureID(cluster,mat_point1);
 
@@ -519,6 +681,7 @@ void iterClusterWithNeighbor(vector<vector<int> > &cluster, vector<Point2f> &mat
         id_NotEnough.clear();
         for(int i = 0; i < id_NotEnough2.size(); ++i)
         {
+
             id_NotEnough.push_back(id_NotEnough2[i]);
         }
         // 重复之前
@@ -527,8 +690,8 @@ void iterClusterWithNeighbor(vector<vector<int> > &cluster, vector<Point2f> &mat
 
 //    cout << "leave iterClusterWithNeighbor" <<endl;
 
-    cout << "应该是在判断homo那边的pxiel的距离那边，出现了必须要强制更新全部的一个问题，是那边的问题，这边的问题不大了，"
-            "但是目前还是出现了最后剩下两个区域，不断相互替换的问题，那么就是有问题啊(依然可能是在homo那边的问题)" << endl;
+//    cout << "应该是在判断homo那边的pxiel的距离那边，出现了必须要强制更新全部的一个问题，是那边的问题，这边的问题不大了，"
+//            "但是目前还是出现了最后剩下两个区域，不断相互替换的问题，那么就是有问题啊(依然可能是在homo那边的问题)" << endl;
 }
 
 void updateCluster(vector<vector<int> > &cluster, map<int, int> &link)
@@ -752,8 +915,6 @@ void iteratorGetHomo(vec2di& cluster, std::vector<cv::Mat>& Homo, std::map<int,i
         }
 
     }
-
-
 }
 
 Mat getCorresponseMaps(vec2di& cluster,vector<  cv::Point2f >& mat_point1,vector<  cv::Point2f >& mat_point2)
@@ -857,7 +1018,7 @@ bool judgeHomoDistance( Mat& H,vector<cv::Point2f>& obj,vector<cv::Point2f>& sce
 
     }
 
-    if(outlier_id.size() == 0)
+    if(outlier_id.size() == 0 || outlier_id.size() < OUTLIER_MAX_NUM)
     {
         return true;
     }
@@ -930,15 +1091,16 @@ vector<int> getFeatureNumberInCluster(vector<  cv::Point2f >& mat_point1,vec2di&
 vector<int> findNofeatureId(vector<  cv::Point2f >& mat_point1,vec2di& cluster)
 {
     vector<int> vec_count_cluster;
-    cout << "start getClusterID" <<endl;
+
     set<int> idset = getClusterID(cluster);
 
-    cout << "findNofeatureId: idset size = " << idset.size() << endl;
+    cout << "findNofeatureId: cluster size = " << idset.size() << endl;
 
     int max_clu = findmaxclu(cluster);
-    cout << "findNofeatureId: cluster size = " << max_clu << endl;
+//    cout << "findNofeatureId: cluster size = " << max_clu << endl;
 
     for(int i = 0; i < max_clu; ++i)
+//    for(int i = 0; i < idsext.size(); ++i)
     {
         vec_count_cluster.push_back(0); // vec_count_cluster -> ID
     }
@@ -960,6 +1122,7 @@ vector<int> findNofeatureId(vector<  cv::Point2f >& mat_point1,vec2di& cluster)
                                       // 30 is a trick....
                                       // small number leads to error matching and error warp result without update homography again
         {
+            cout << "findNofeatureId cluster ID = " << i << ", features size = " << vec_count_cluster[i] << endl;
             id_without.push_back(i);
         }
     }

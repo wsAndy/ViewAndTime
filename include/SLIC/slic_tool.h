@@ -25,11 +25,12 @@ using namespace cv;
 #define vec2di vector< vector<int> >
 #define vec2db vector< vector<bool> >
 
-#define FEATURE_NUMBER_REGION 15
-#define HOMO_MIN_NUM  15
-#define ITERATOR_TIMES_FOR_HOMO 30
-#define HOMO_DISTANCE 2
-#define SUPER_MIN_NUM 2
+#define FEATURE_NUMBER_REGION 5
+#define HOMO_MIN_NUM  5
+#define ITERATOR_TIMES_FOR_HOMO 15
+#define HOMO_DISTANCE 3
+#define CLUSTER_MIN_NUM 3
+#define OUTLIER_MAX_NUM 1000
 
 //namespace slic_tool{
 
@@ -51,7 +52,7 @@ Mat getSingleCluster(vec2di & cluster);
 vec2di getSuperPixels(Mat& img1_col);
 // for  cv::Point3f, I define [x,y,counter]
 void displayCenterWithCluster(vector< cv::Point3f > &center, vec2di & cluster);
-
+int getClusterSize(vec2di& cluster);
 vector<cv::Point3f> getCenterFromCluster(vec2di & cluster);
 
 // calculate distance between two points in image coordinate
@@ -86,6 +87,7 @@ Mat getCorresponseMaps( vec2di& ,vector<  cv::Point2f >& ,vector<  cv::Point2f >
 
 // warp image and save the result
 void warp( Mat& img1_col, Mat& derformMat);
+void warp( Mat& img1_col, Mat& derformMat, int index);
 void warp( Mat& img1_col, Mat& derformMat1,  Mat& img2_col, Mat& derformMat2, int Vir_num);
 
 // judge homography by calculate distance between x2 and H*x1
